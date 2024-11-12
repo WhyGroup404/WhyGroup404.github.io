@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8">
-    <title>黑猩科技 - Why视频网页转制版</title>
+    <title>黑猩科技 - Why视频</title>
     <link rel="stylesheet" href="style.css">
     <link rel="icon" href="png/why.ico" type="image/x-icon">
     <link rel="shortcut icon" href="png/why.ico" type="image/x-icon">
@@ -50,7 +50,7 @@
   </div>
 
     <!-- 版本信息 -->
-    <div id="VersionText">Why Videos 8.2.5 网页版</div>
+    <div id="VersionText">Why Videos 8.2.5</div>
 
     <header class="header">
         <h1>Why视频</h1>
@@ -76,6 +76,7 @@
         <div class="close-btn" onclick="closeWindow()">&#10006;</div>
         <div class="sidebar">
             <h1>设置</h1>
+            <div class="tab" onclick="openTab('personalization')">版本切换</div>
             <div class="tab" onclick="openTab('playback')">播放设置</div>
             <div class="tab" onclick="openTab('info')">调试信息</div>
             <div class="tab" onclick="openTab('dock-settings')">Dock栏设置</div>
@@ -84,6 +85,16 @@
         </div>
         <div class="content">
             <!-- 各页面内容 -->
+            <div id="personalization" class="page">
+                <h1>版本切换</h1>
+                <p>由于新版内核较大改动，可能不稳定</p>
+                <p>如果遇到异常，建议切换回老内核使用。</p>
+                <button class="ui-switch-btn" onclick="switchToClassicUI()">切换到5.8版本(基于6.0.1内核)</button>
+                <button class="newui-switch-btn" onclick="switchToNewUI()">切换到6.5.1内核</button>
+                <button class="Oldkernel7-switch-btn" onclick="switchToOldKernel7()">切换到7.2.1内核</button>
+                <p>IE浏览器建议切换至老内核，兼容性更佳</p>
+                <button class="zhuye-switch-btn" onclick="switchTozhuye()">返回黑猩主页</button>
+            </div>
 
             <div id="playback" class="page">
                 <h1>播放设置</h1>
@@ -96,9 +107,10 @@
             <div id="info" class="page">
                 <h1>调试信息</h1>
                 <p>CurrentVersion: 8.2.5.11.24</p>
-                    <p><strong>设备类型:</strong> <span id="whyDeviceType"></span></p>
-                    <p><strong>设备系统:</strong> <span id="whyOSVersion"></span></p>
-                    <p><strong>浏览器:</strong> <span id="whyBrowserDetails"></span></p>
+                    <p><strong>Device Type:</strong> <span id="whyDeviceType"></span></p>
+                    <p><strong>Operating System:</strong> <span id="whyOSVersion"></span></p>
+                    <p><strong>Browser:</strong> <span id="whyBrowserDetails"></span></p>
+                    <p><a href="Browser/index.html">内置浏览器调试页</a></p>
                 <p>Build 108</p>
             </div>
            
@@ -129,17 +141,18 @@
 
             <div id="help" class="page">
                 <h1>帮助</h1>
-                <p>网页版暂不支持此选项。</p>
+                <p>如果您需要帮助，则大部分内容都可以再次文档中找到</p>
+                <p>点击<a href="">此处</a>以阅读帮助文档</p>
             </div>
 
             <div id="about" class="page active">
                 <div class="about-header">Why 8.2.5 Release</div>
                 <div class="about-content">
-                    <p>Why视频网页版</p>
+                    <p>Why视频增强版(修正版本)</p>
                     <p>2024年秋季更新(Version 8.2.5 Build 108)</p>
                     <p>核心文件精简整理，运行更加快速高效。</p>
                     <p>8.0全新版本！带来Dock栏改进与重大错误修复。</p>
-                    <p>8.2.5更新:全新的功能 欢迎体验！</p>
+                    <p>8.2.5更新:</p>
                     <p>开始使用则代表您同意<a href="Protocol/index.html" target="_blank">《Why视频用户使用协议》</a></p>
                 </div>
             </div>
@@ -180,7 +193,7 @@
     <div class="dock-bar">
         <div class="icon-container">
             <div class="icon-wrapper">
-                <img src="png/settings.png" alt="Settings" class="settings-icon">
+                <img src="png/Settings.png" alt="Settings" class="settings-icon">
             </div>
             <div class="search-wrapper" id="search-wrapper">
                 <div class="icon-wrapper" id="search-icon">
@@ -292,7 +305,7 @@
 
     <div id="fpsDisplay">FPS: 0</div>
 
-<!-- 仿Win10右下角通知弹窗 -->
+<!-- 右下角通知弹窗 -->
 <div id="saveVideoNotification" class="notification-popup">
     <p id="notificationText">上一次看到 Video </p>
     <img src="png/exit.png" id="closeNotificationIcon" alt="关闭" class="notification-close-icon">
@@ -327,7 +340,7 @@
         <img src="png/search.ico" alt="Search"> 搜索
     </div>
     <div class="actioncenter-item" id="actioncenterSettings">
-        <img src="png/settings.png" alt="Settings"> 设置
+        <img src="png/Settings.png" alt="Settings"> 设置
     </div>
     <div class="actioncenter-item" id="actioncenterAutoplay">
         <img src="png/autoplay.png" alt="Autoplay"> 自动连播 <span id="autoplayStatus"></span>

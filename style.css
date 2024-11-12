@@ -68,7 +68,7 @@
   font-weight: bold;
   position: relative; /* 添加相对定位 */
   transition: background-color 0.3s ease;
-  font-family: FONTfan;
+  font-family: FontFAN;
 }
 /* 添加过渡效果 */
 /* 添加按钮悬停效果 */
@@ -125,7 +125,7 @@
     border-radius: 12px;
     -webkit-border-radius: 12px;
     color: white;
-    font-family: fonthei;
+    font-family: fontHei;
 }
 .header {
     text-align: center;
@@ -144,7 +144,7 @@
     color: grey;
     margin: 0; /* 移除默认边距 */
     padding: 0; /* 移除默认填充 */
-    font-family: FONTXI;
+    font-family: FontXI;
 }
 
 
@@ -230,7 +230,7 @@
         box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
         transition: transform 0.3s ease-in-out;
         transition: background-color 0.3s ease; /* 添加过渡效果 */
-        font-family: FONTHEI;
+        font-family: FontHei;
       }
 /* 悬停效果 */
 #aboutBtn:hover {
@@ -304,7 +304,7 @@
             border-radius: 12px;
             -webkit-border-radius: 12px;
             color: white;
-            font-family: FONTXI;
+            font-family: FontXI;
             opacity: 0;
             transform: translateY(-10px); /* 初始位置稍微偏上 */
             transition: opacity 0.3s ease, transform 0.3s ease; /* 过渡动画 */
@@ -382,18 +382,18 @@
     z-index: 99;
 }
 .container p {
-  font-family: FONTXI;
+  font-family: FontXI;
 }
 .container a {
-    font-family: FONTXI;
+    font-family: FontXI;
     color:white
   }
   .container h1 {
-    font-family: FONTHEI;
+    font-family: FontHei;
     color:white;
   }
   .container text {
-    font-family: FONTXI;
+    font-family: FontXI;
     color:#0078D4
   }
         .close-btn {
@@ -413,12 +413,12 @@
             padding: 20px;
             border-radius: 10px 0 0 10px;
             background-color: rgba(89, 89, 89, 0.6);
-            font-family: fontxi;
+            font-family: FontXI;
         }
         .content {
             flex-grow: 1;
             padding: 20px;
-            font-family: fonthei;
+            font-family: FontHei;
         }
         .tab {
             margin-bottom: 20px;
@@ -436,7 +436,7 @@
             border-radius: 6px;
             -webkit-border-radius: 6px;
             color: white;
-            font-family: fontxi;
+            font-family: FontXI;
         }
         /* 设置选项卡按压效果 */
         .tab.active {
@@ -621,12 +621,12 @@
         }
         .dock-bar .time .clock {
             font-size: 18px;
-            font-family: fonthei;
+            font-family: FontHei;
         }
         .dock-bar .time .date {
             font-size: 14px;
             color: grey;
-            font-family: fontxi;
+            font-family: FontXI;
         }
 
 /* Win10风格的时间与日期弹窗 */
@@ -845,7 +845,7 @@ border: 1px solid rgba( 255, 255, 255, 0.18 );
 }
 .search-wrapper{
     color:white;
-    font-family: Fontxi;
+    font-family: FontXI;
 }
 
 /* 隐藏搜索文本 */
@@ -856,7 +856,7 @@ border: 1px solid rgba( 255, 255, 255, 0.18 );
 .search-box::placeholder {
     color: white; /* 将占位符文字颜色设置为白色 */
     opacity: 1; /* 保证颜色不受透明度影响 */
-    font-family: FONTXI;
+    font-family: FontXI;
 }
 
 .ui-switch-btn {
@@ -866,12 +866,12 @@ border: 1px solid rgba( 255, 255, 255, 0.18 );
     border: none; /* 移除按钮边框 */
     cursor: pointer; /* 设置鼠标悬停时的光标样式 */
     transition: background-color 0.3s; /* 设置按钮背景色变化的过渡效果 */
-    font-family: fontxi;
+    font-family: FontXI;
 }
 
 .ui-switch-btn:hover {
     background-color: #7d26cd; /* 设置鼠标悬停时的渐变紫色 */
-    font-family: fontxi;
+    font-family: FontXI;
 }
 .newui-switch-btn {
     background-color: #005a9e; /* 设置按钮背景色为蓝色 */
@@ -881,7 +881,7 @@ border: 1px solid rgba( 255, 255, 255, 0.18 );
     border-radius: 5px; /* 设置按钮圆角 */
     cursor: pointer; /* 设置鼠标悬停时的光标样式 */
     transition: background-color 0.3s; /* 设置按钮背景色变化的过渡效果 */
-    font-family: fontxi;
+    font-family: FontXI;
 }
 .newui-switch-btn:hover {
     background-color: #0078D7; /* 设置鼠标悬停时的渐变蓝色 */
@@ -894,7 +894,7 @@ border: 1px solid rgba( 255, 255, 255, 0.18 );
     border-radius: 5px; /* 设置按钮圆角 */
     cursor: pointer; /* 设置鼠标悬停时的光标样式 */
     transition: background-color 0.3s; /* 设置按钮背景色变化的过渡效果 */
-    font-family: fontxi;
+    font-family: FontXI;
 
     backdrop-filter: blur(16px) saturate(180%);
     -webkit-backdrop-filter: blur(16px) saturate(180%);
@@ -911,7 +911,7 @@ border: 1px solid rgba( 255, 255, 255, 0.18 );
     display: flex;
     justify-content: center;
     align-items: center;
-    font-family: fontxi;
+    font-family: FontXI;
     position: absolute; /* 绝对定位 */
     left: 50%; /* 移动到容器的50%位置 */
     transform: translateX(-50%);
@@ -937,7 +937,7 @@ border: 1px solid rgba( 255, 255, 255, 0.18 );
     border: none;
     cursor: pointer;
     font-size: 16px;
-    font-family: FONTXI;
+    font-family: FontXI;
     background-color: rgba(89, 89, 89, 0.6);
     backdrop-filter: blur(10px);
     border-radius: 8px;
@@ -954,7 +954,7 @@ border: 1px solid rgba( 255, 255, 255, 0.18 );
 #speedBtn.active {
     background-color:#0078D3 ;
     color: white;
-    font-family: FONTXI;
+    font-family: FontXI;
     
 }
 .volume-popup {
@@ -1092,19 +1092,19 @@ border: 1px solid rgba(255, 255, 255, 0.18);
     margin: 0;
     font-size: 1em;
     color:white;
-    font-family:FONTXI
+    font-family:FontXI
 }
 .notification true {
     margin: 0;
     font-size: 1.1em;
     color:green;
-    font-family:FONTXI
+    font-family:FontXI
 }
 .notification a {
     margin: 0;
     font-size: 1.2em;
     color:#0078D4;
-    font-family:COOL
+    font-family:cool
 }
 /* 启动页样式 */
 
@@ -1115,7 +1115,7 @@ border: 1px solid rgba(255, 255, 255, 0.18);
      top: 0;
      left:0;
      position:absolute;
-     font-family: fontxi;
+     font-family: FontXI;
 }
 .openpage-popup {
     position: fixed;
@@ -1131,7 +1131,7 @@ border: 1px solid rgba(255, 255, 255, 0.18);
     visibility: hidden;
     transition: opacity 0.3s, visibility 0.3s;
     color:black;
-    font-family: FONTXI;
+    font-family: FontXI;
 }
 
 .openpage-popup.show {
@@ -1542,7 +1542,7 @@ video::-webkit-media-controls-fullscreen-button {
     display: none; /* 初始隐藏 */
     z-index: 1000;
     text-align: center;
-    font-family: fontxi;
+    font-family: FontXI;
     background-color: rgba(89, 89, 89, 0.25);
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
@@ -1580,7 +1580,7 @@ button.apply-btn:hover {
     padding: 5px 10px;
     z-index: 1000;
     transition-duration: 0.3s;
-    font-family: fontxi;
+    font-family: FontXI;
     background-color: rgba(89, 89, 89, 0.25);
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
@@ -1647,7 +1647,7 @@ button.apply-btn:hover {
     margin-top: 10px; /* 上边距 */
     display: flex; /* 使用flex布局 */
     align-items: center; /* 垂直居中对齐 */
-    font-family: fontxi;
+    font-family: FontXI;
 }
 #fullscreen-alert {
     position: fixed;
@@ -1731,7 +1731,7 @@ button.apply-btn:hover {
     font-size: 14px;
     color: white;
     margin-top: 10px;
-    font-family: FONTXI;
+    font-family: FontXI;
 }
 
 .undo-btn {
@@ -1760,7 +1760,7 @@ button.apply-btn:hover {
     padding: 20px;
     transition: right 0.5s ease;
     z-index: 9000;
-    font-family: fontxi;
+    font-family: FontXI;
     background-color: rgba(89, 89, 89, 0.25);
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
@@ -2027,7 +2027,7 @@ button.apply-btn:hover {
 .WhyVideos_News_holiday-info .WhyVideos_News_date {
     font-size: 22px; /* 日期字体增大 */
     margin-bottom: 10px;
-    font-family: FONTHEI;
+    font-family: FontHei;
 }
 
 .WhyVideos_News_holiday-info .WhyVideos_News_description {
