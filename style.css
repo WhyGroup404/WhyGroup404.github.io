@@ -1,0 +1,2134 @@
+    @font-face {
+        font-family: "FontFAN";
+        src: url("Font/fontFAN.ttf");
+      }
+      @font-face {
+        font-family: "FontHei";
+        src: url("Font/fontHei.ttf");
+      }
+      @font-face {
+        font-family: "FontXI";
+        src: url("Font/fontXI.ttf");
+      }
+      @font-face {
+        font-family: "Cool";
+        src: url("font/cool.ttf");
+      }
+      @font-face {
+        font-family: "Nasa";
+        src: url("../Gamecenter/RES/font/nasalization-rg.otf");
+      } 
+      @font-face {
+        font-family: "Yuan";
+        src: url("../RES/font/weilaiyuan.ttf");
+      } 
+      @font-face {
+        font-family: "Douyin";
+        src: url("font/douyin.otf");
+      } 
+      @font-face {
+        font-family: "Font1";
+        src: url("font/江城圆体.ttf");
+      } 
+  body {
+   background-color: #333333;
+   color: white;
+   font-family: Arial, sans-serif;
+   margin: 0;
+   padding: 0;
+  } 
+  /* 控制栏样式 */
+  .controls {
+    position: fixed;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 100%;
+    width: 50px;
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+.controls, #aboutBtn {
+    display: none;
+}
+
+/* 控制栏按钮样式 */
+.controls button {
+  background-color: #666666; /* 灰色背景 */
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-bottom: 10px;
+  font-size: 16px;
+  font-weight: bold;
+  position: relative; /* 添加相对定位 */
+  transition: background-color 0.3s ease;
+  font-family: FONTfan;
+}
+/* 添加过渡效果 */
+/* 添加按钮悬停效果 */
+.controls button:hover {
+  background-color: #0078D4; /* 蓝色背景 */
+}
+/* 添加按钮左侧蓝条样式 */
+.controls button::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0.118px; /* 左侧间距 */
+  width: 4px; /* 蓝条宽度 */
+  height: 100%;
+  background-color: #0078D4; /* 蓝色 */
+  transition: background-color 0.3s ease; /* 添加过渡效果 */
+  border-radius: 5px;
+}
+/* 蓝条悬停效果 */
+.controls button:hover::before {
+  background-color: #0078D4; /* 蓝色 */
+}
+.video-container {
+        position: fixed;
+        top: 75px; /* 顶部空出页眉的高度 */
+        left: 0px; /* 左侧空出控制栏的宽度 */
+        right: 0;
+        bottom: 80px;
+        overflow: hidden;
+        border-radius: 30px; 
+        transition-duration: 0.3s;
+    }
+    video {
+        width: 100%;
+        height: 100%;
+        border-radius: 30px;
+
+    }
+  
+  /* 页眉样式 */
+  .header {
+    background-color: rgba(89, 89, 89, 0.35);
+    padding: 10px;
+    text-align: center; /* 将标题中对齐 */
+    font-size: 33px;
+    font-weight: bold;
+    position: relative;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(16.5px);
+    -webkit-backdrop-filter: blur(16.5px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: rgba(14, 14, 14, 0.19) 0px 6px 15px 0px;
+    -webkit-box-shadow: rgba(14, 14, 14, 0.19) 0px 6px 15px 0px;
+    border-radius: 12px;
+    -webkit-border-radius: 12px;
+    color: white;
+    font-family: fonthei;
+}
+.header {
+    text-align: center;
+    margin-bottom: 10px; /* 控制标题和视频容器之间的距离 */
+}
+
+.header h1 {
+    font-size: 28px; /* 调整大标题字体大小 */
+    margin: 0; /* 移除默认边距 */
+    padding: 0; /* 移除默认填充 */
+    font-family: douyin;
+}
+
+.subtitle {
+    font-size: 12px; /* 调整小标题字体大小 */
+    color: grey;
+    margin: 0; /* 移除默认边距 */
+    padding: 0; /* 移除默认填充 */
+    font-family: FONTXI;
+}
+
+
+  /* 页眉字体样式 */
+  .controls .logo-container {
+   position: absolute;
+   bottom: 0;
+   left: -30px;
+   width: 30px;
+   height: 100px;
+   display: flex;
+   flex-direction: column;
+   justify-content: center;
+  }
+  
+  .controls .logo-container span {
+   /* 文字样式 */
+   color: #8A2BE2;
+   font-size: 20px;
+   font-weight: bold;
+   /* 文字旋转和位置 */
+   transform-origin: bottom left;
+   transform: rotate(-90deg);
+   position: relative;
+   left: 10px;
+  }
+  
+  .controls .logo-container span::before {
+   /* 文字渐变效果 */
+   content: "-";
+   position: absolute;
+   top: 0;
+   left: 0;
+   -webkit-text-fill-color: transparent;
+   -webkit-background-clip: text;
+   background-image: linear-gradient(to bottom, #8A2BE2, #800080);
+  }
+  #VersionText {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 10px;
+    color: white;
+    z-index: 9999; /* 确保状态栏位于其他内容之上 */
+    font-family:FontXI ;
+    z-index: 999; /* 确保在最顶层显示 */
+}
+
+#VersionText span {
+    margin-right: 10px; /* 添加间隔 */
+}
+@keyframes expand {
+    0% {
+        width: 0; /* 蓝条宽度从 0 开始 */
+    }
+    100% {
+        width: 100%; /* 蓝条宽度最终为搜索框的宽度 */
+    }
+}
+/*关于与帮助按钮CSS样式*/
+      /* 主题样式修改 */
+      body {
+        background-color: #2e2e2e; /* 深灰色背景 */
+        color: #ffffff; /* 白色文字 */
+        padding-left: 10px; /* 左侧空白 */
+      }
+      
+      /* 关于按钮样式修改 */
+      #aboutBtn {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 2;
+        background-color: #333333; /* 深灰色按钮 */
+        color: #ffffff;
+        border: none;
+        font-size: 18px;
+        font-weight: bold;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        transition: transform 0.3s ease-in-out;
+        transition: background-color 0.3s ease; /* 添加过渡效果 */
+        font-family: FONTHEI;
+      }
+/* 悬停效果 */
+#aboutBtn:hover {
+    background-color: #0078D4; /* 蓝色背景 */
+}
+      /* 弹窗样式修改 */
+      .custom-alert {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: #2e2e2e; /* 深灰色背景 */
+        padding: 20px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        z-index: 100;
+        display: none;
+        border-radius: 20px;
+        overflow: hidden;
+        width: 400px; /* 修改弹窗宽度 */
+        transition: visibility 0s, opacity 0.3s ease-in-out;
+      }
+
+      /* 弹窗中文本颜色 */
+      .custom-alert h2{
+        color:#0078D4
+      }
+      .custom-alert p {
+        color: #ffffff; /* 白色文字 */
+        font-family: FontFAN;
+      }
+
+      /* 关闭按钮样式修改 */
+      .custom-alert button {
+        margin-top: 20px;
+        background-color: #333333; /* 深灰色按钮 */
+        color: #ffffff;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: transform 0.3s ease-in-out;
+        transition: background-color 0.3s ease; /* 添加过渡效果 */
+      }
+/* 添加悬停效果 */
+.custom-alert button:hover {
+    background-color: #0078D4; /* 蓝色背景 */
+}
+#logoImage {
+    width: 18px; /* 图片宽度 */
+    height: 18px; /* 图片高度 */
+    margin-left: 1px; 
+}
+#aboutImage {
+    width: 16px; 
+    height: 15px; 
+    margin-left: 1px; 
+}
+        /* 右键菜单样式 */
+        .context-menu {
+            display: none;
+            position: absolute;
+            padding: 4px 0;
+            z-index: 1000;
+            border-radius: 6px; /* 圆角 */
+            background-color: rgba(89, 89, 89, 0.6);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow: rgba(14, 14, 14, 0.19) 0px 6px 15px 0px;
+            -webkit-box-shadow: rgba(14, 14, 14, 0.19) 0px 6px 15px 0px;
+            border-radius: 12px;
+            -webkit-border-radius: 12px;
+            color: white;
+            font-family: FONTXI;
+            opacity: 0;
+            transform: translateY(-10px); /* 初始位置稍微偏上 */
+            transition: opacity 0.3s ease, transform 0.3s ease; /* 过渡动画 */
+            z-index: 9999; /* 确保菜单在最上层 */
+        }
+        .context-menu.show {
+            display: block;
+            opacity: 1;
+            transform: translateY(0); /* 最终位置 */
+        }
+        .context-menu-item {
+            padding: 10px 16px;
+            cursor: pointer;
+            position: relative;
+            transition: background-color 0.2s, padding-left 0.2s;
+            border-radius: 5px;
+        }
+        .context-menu-item:hover {
+            background-color: #0078D4;
+            border-radius: 5px;
+        }
+        /* 右键菜单项按下效果 */
+.context-menu-item:active {
+    transform: scale(0.98); /* 按下时稍微缩小 */
+    background-color: rgba(0, 120, 212, 0.3); /* 按下时的背景色，设置为透明蓝色 */
+    color: white; /* 按下时文字变白 */
+}
+
+/* 右键菜单项波纹效果 */
+.context-menu-item {
+    position: relative;
+    overflow: hidden; /* 防止波纹溢出 */
+}
+
+
+        .center-container {
+        position: fixed;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: rgba(0, 0, 0, 0.5); /* 半透明黑色背景 */
+        z-index: 9999; /* 确保在最顶层 */
+    }
+    @keyframes fadeIn {
+        0% {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+        100% {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+    .container {
+    position: fixed;
+    width: 80vw;
+    max-width: 800px;
+    margin: 120px auto;
+    top: 50%; /* 上边距是视口高度的一半 */
+    left: 50%; /* 左边距是视口宽度的一半 */
+    transform: translate(-50%, -50%); /* 通过transform属性将元素水平和垂直居中 */
+    color: #222222;
+    margin-top: -20px;
+    background-color: rgba(89, 89, 89, 0.6);
+    backdrop-filter: blur(14.5px);
+    -webkit-backdrop-filter: blur(14.5px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: rgba(14, 14, 14, 0.19) 0px 6px 15px 0px;
+    -webkit-box-shadow: rgba(14, 14, 14, 0.19) 0px 6px 15px 0px;
+    border-radius: 6px;
+    -webkit-border-radius: 6px;
+    color: white;
+    z-index: 99;
+}
+.container p {
+  font-family: FONTXI;
+}
+.container a {
+    font-family: FONTXI;
+    color:white
+  }
+  .container h1 {
+    font-family: FONTHEI;
+    color:white;
+  }
+  .container text {
+    font-family: FONTXI;
+    color:#0078D4
+  }
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            cursor: pointer;
+            font-size: 24px;
+            color: #aaa; 
+        }
+        .close-btn:hover {
+            color: red;
+        }
+        .sidebar {
+            width: 200px;
+            background-color: #555; 
+            padding: 20px;
+            border-radius: 10px 0 0 10px;
+            background-color: rgba(89, 89, 89, 0.6);
+            font-family: fontxi;
+        }
+        .content {
+            flex-grow: 1;
+            padding: 20px;
+            font-family: fonthei;
+        }
+        .tab {
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #666;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            background-color: rgba(89, 89, 89, 0.5);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow: rgba(14, 14, 14, 0.19) 0px 6px 15px 0px;
+            -webkit-box-shadow: rgba(14, 14, 14, 0.19) 0px 6px 15px 0px;
+            border-radius: 6px;
+            -webkit-border-radius: 6px;
+            color: white;
+            font-family: fontxi;
+        }
+        /* 设置选项卡按压效果 */
+        .tab.active {
+            background-color: #0078D4;
+            color: #fff;
+        }
+.tab:active {
+    transform: scale(0.98); /* 按下时稍微缩小 */
+    background-color: #0078D4; /* 按下时的背景色 */
+    color: white; /* 按下时文字变白 */
+}
+
+        .about-header {
+            position: relative; /* 设置为相对定位，便于下面调整距离顶部的位置 */
+            top: 15px; /* 距离顶部15px */
+            height: 60px;
+            background: linear-gradient(to right, #007bff, #00bfff);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            border-radius: 15px;
+            font-weight: bold;
+            font-family: nasa;
+        }
+        
+        .about-content {
+            padding: 20px;
+        }
+        .button {
+            display: inline-block;
+            margin-right: 10px;
+            padding: 10px 20px;
+            background-color: #0078D4;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+        .button:hover {
+            background-color: #005a9e;
+        }
+        .page {
+            display: none;
+        }
+        .page.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        #img{
+    width: 18px; /* 图片宽度 */
+    height: 18px; /* 图片高度 */
+    margin-left: 1px; 
+}
+.dock-bar {
+            position: fixed;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            background-color: rgba(89, 89, 89, 0.35);
+            -webkit-backdrop-filter: blur(22.5px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow: rgba(14, 14, 14, 0.19) 0px 6px 15px 0px;
+            -webkit-box-shadow: rgba(14, 14, 14, 0.19) 0px 6px 15px 0px;
+            -webkit-border-radius: 12px;
+            color: rgb(128, 128, 128);
+            width: 95%; /* dock栏宽度 */
+            font-family: "Nasa", "Fontxi";
+             position: fixed;
+             bottom: 15px;
+             left: 50%;
+            transform: translateX(-50%);
+             max-width: 1200px;
+             display: flex;
+             align-items: center;
+              justify-content: space-between;
+               padding: 10px 20px;
+             background-color: rgba(89, 89, 89, 0.35);
+             backdrop-filter: blur(22.5px);
+            border-radius: 12px;
+             transition: bottom 0.3s ease;
+             z-index: 1000;
+
+        }
+        .dock-bar .icon-container {
+            display: flex;
+            align-items: center;
+        }
+        .dock-bar .icon-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: rgba(89, 89, 89, 0.6);
+            backdrop-filter: blur(10px);
+            border-radius: 8px;
+            padding: 8px;
+            margin: 0 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            height: 25px;
+        }
+        .dock-bar .icon-wrapper:active {
+            transform: scale(0.95); /* 按下缩小效果 */
+            background-color: #005a9e; /* 按下时的背景色 */
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.5); /* 按下时的阴影效果 */
+        }        
+        .dock-bar .icon-wrapper img {
+            width: 24px;
+            height: 24px;
+        }
+        .dock-bar .icon-wrapper:hover {
+            background-color: #0078d3; /* Sky blue */
+        }
+        .dock-bar .version {
+            color: black;
+            font-size: 16px;
+            background-color: rgba(89, 89, 89, 0.6);
+            backdrop-filter: blur(10px);
+            border-radius: 8px;
+            padding: 8px;
+            margin: 0 5px;
+        }
+        .dock-bar .version-container {
+            display: flex;
+            align-items: center;
+        }
+        .dock-bar .version-container span {
+            margin: 0 5px;
+        }
+        .dock-bar .arrow-buttons {
+            display: flex;
+            align-items: center;
+        }
+        .dock-bar .arrow-buttons button {
+            background-color: rgba(89, 89, 89, 0.6);
+            backdrop-filter: blur(10px);
+            border: none;
+            border-radius: 8px;
+            padding: 8px;
+            margin-left: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+        .dock-bar .arrow-buttons button:hover {
+            background-color: #0078D3; /* Sky blue */
+        }
+        .dock-bar .arrow-buttons button:focus {
+            outline: none;
+        }
+        .dock-bar .arrow-buttons button img {
+            width: 21.5px;
+            height: 21.5px;
+        }
+        .dock-bar .arrow-buttons button:active,
+        .dock-bar #volumeBtn:active,
+        .dock-bar #fullscreen-btn:active,
+        .dock-bar #speedBtn:active,
+        .dock-bar #hideDockBar:active {
+            transform: scale(0.95); /* 按下缩小效果 */
+            background-color: #005a9e; /* 按下时的背景色 */
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.5); /* 按下时的阴影效果 */
+        }
+
+        .dock-bar .time {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            text-align: center;
+        }
+        .dock-bar .time .clock {
+            font-size: 18px;
+            font-family: fonthei;
+        }
+        .dock-bar .time .date {
+            font-size: 14px;
+            color: grey;
+            font-family: fontxi;
+        }
+
+/* Win10风格的时间与日期弹窗 */
+.date-popup {
+    display: none;
+    position: fixed;
+    bottom: 80px;
+    right: 30px;
+    width: 360px; /* 减小宽度，紧凑布局 */
+    padding: 15px 20px;
+    background-color: rgba(30, 30, 30, 0.85);
+    backdrop-filter: blur(20px); /* 毛玻璃效果 */
+    box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.7); /* 阴影效果 */
+    border-radius: 12px;
+    color: white;
+    font-family: Segoe UI, Arial, sans-serif;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    background-color: rgba(89, 89, 89, 0.25);
+backdrop-filter: blur(6px);
+-webkit-backdrop-filter: blur(6px);
+border: 1px solid rgba(255, 255, 255, 0.18);
+box-shadow: rgba(14, 14, 14, 0.19) 0px 6px 15px 0px;
+-webkit-box-shadow: rgba(14, 14, 14, 0.19) 0px 6px 15px 0px;
+border-radius: 12px;
+-webkit-border-radius: 12px;
+}
+
+.date-popup.visible {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.time-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 10px; /* 顶部时钟区域与日历的间距缩小 */
+}
+
+.clock-large {
+    font-size: 64px; /* 字体稍微调小 */
+    font-weight: 300;
+    letter-spacing: -1.5px;
+}
+
+.date-large {
+    font-size: 16px;
+    color: #aaa;
+    margin-top: 2px; /* 调小日期与时钟的间距 */
+}
+
+/* 顶部与日历的分隔线 */
+.divider {
+    width: 100%;
+    height: 1px;
+    background-color: rgba(255, 255, 255, 0.2); /* 添加透明的细线 */
+    margin: 10px 0;
+}
+
+/* 日历部分 */
+.calendar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.calendar table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+
+}
+
+.calendar th, .calendar td {
+    padding: 5px;
+    text-align: center;
+    border: none;
+    color: #ddd;
+    font-size: 14px;
+    font-weight: normal;
+}
+
+.calendar th {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.calendar .today {
+    background-color: #0078D7; /* Windows 10 蓝色 */
+    color: white;
+    
+}
+
+.calendar td {
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.calendar td:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* 月份切换按钮 */
+.month-nav {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    padding: 5px 0;
+    align-items: center;
+}
+
+#prev-month, #next-month {
+    background-color: transparent;
+    border: none;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+#prev-month:hover, #next-month:hover {
+    color: #0078D7;
+}
+
+/* 显示弹窗的遮罩 */
+.overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.4);
+    z-index: 999;
+}
+
+.overlay.visible {
+    display: block;
+}
+
+/* 搜索框样式 */
+.search-container {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 10px;
+    border-radius: 5px;
+    display: none; /* 初始隐藏 */
+    z-index: 1000; /* 确保在其他元素之上 */
+}
+
+/* 当搜索框可见时 */
+.search-container.visible {
+    display: block; /* 显示搜索框 */
+}
+
+
+.search-box {
+    width: 500px; /* 调整搜索框长度 */
+    font-size: 15px;
+    outline: none;
+    padding-left: 25px; /* 调整搜索框内边距 */
+    text-align: center; /* 文本居中 */
+position: relative;
+padding: 10px 12px 10px 16px;
+display: -webkit-box;
+display: -webkit-flex;
+display: flex;
+box-sizing: border-box;
+color: white;
+display: flex;
+justify-content: center;
+align-items: center;
+gap: 20px;
+background-color: rgba(15,11,33, 0.09);
+box-shadow: rgba(0, 0, 0, 0.3) 2px 8px 8px;
+border-bottom: 3px rgba(40,40,40,0.35) solid;
+border-right: 3px rgba(40,40,40,0.35) solid;
+font-family: nasa;
+
+background: rgba( 0, 0, 0, 0.25 );
+box-shadow: 0 8px 32px 0 rgba( 31, 38, 135, 0.37 );
+backdrop-filter: blur( 5px );
+-webkit-backdrop-filter: blur( 5px );
+border-radius: 10px;
+border: 1px solid rgba( 255, 255, 255, 0.18 );
+}
+.search-box p{
+  color:white
+}
+#searchIcon {
+    position: absolute;
+    left: 20px; /* 搜索图标位置调整到文本左边 */
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    font-size: 10px;
+    width: 2.4em;
+    height: 2.4em;
+    margin-right: 4px;
+    -webkit-flex-shrink: 0;
+    flex-shrink: 0;
+    color: rgba(0,0,0,0.3);
+    color: var(--weui-FG-2);
+}
+/* 显示搜索框 */
+.search-container.visible {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.search-wrapper{
+    color:white;
+    font-family: Fontxi;
+}
+
+/* 隐藏搜索文本 */
+.search-wrapper .hide-text {
+    display: none;
+}
+
+.search-box::placeholder {
+    color: white; /* 将占位符文字颜色设置为白色 */
+    opacity: 1; /* 保证颜色不受透明度影响 */
+    font-family: FONTXI;
+}
+
+.ui-switch-btn {
+    background-color: purple; /* 设置按钮背景色为紫色 */
+    color: white; /* 设置按钮文字颜色为白色 */
+    padding: 10px 20px; /* 设置按钮内边距 */
+    border: none; /* 移除按钮边框 */
+    cursor: pointer; /* 设置鼠标悬停时的光标样式 */
+    transition: background-color 0.3s; /* 设置按钮背景色变化的过渡效果 */
+    font-family: fontxi;
+}
+
+.ui-switch-btn:hover {
+    background-color: #7d26cd; /* 设置鼠标悬停时的渐变紫色 */
+    font-family: fontxi;
+}
+.newui-switch-btn {
+    background-color: #005a9e; /* 设置按钮背景色为蓝色 */
+    color: white; /* 设置按钮文字颜色为白色 */
+    padding: 10px 20px; /* 设置按钮内边距 */
+    border: none; /* 移除按钮边框 */
+    border-radius: 5px; /* 设置按钮圆角 */
+    cursor: pointer; /* 设置鼠标悬停时的光标样式 */
+    transition: background-color 0.3s; /* 设置按钮背景色变化的过渡效果 */
+    font-family: fontxi;
+}
+.newui-switch-btn:hover {
+    background-color: #0078D7; /* 设置鼠标悬停时的渐变蓝色 */
+}
+.Oldkernel7-switch-btn {
+    background-color: #005a9e; /* 设置按钮背景色为蓝色 */
+    color: white; /* 设置按钮文字颜色为白色 */
+    padding: 10px 20px; /* 设置按钮内边距 */
+    border: none; /* 移除按钮边框 */
+    border-radius: 5px; /* 设置按钮圆角 */
+    cursor: pointer; /* 设置鼠标悬停时的光标样式 */
+    transition: background-color 0.3s; /* 设置按钮背景色变化的过渡效果 */
+    font-family: fontxi;
+
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    background-color: rgba(30,144,255,0.39);
+    border-radius: 10px;
+    border: 1px solid rgba(209, 213, 219, 0.3)
+}
+.Oldkernel7-switch-btn:hover {
+    background-color: #0078D7; /* 设置鼠标悬停时的渐变蓝色 */
+}
+/* 添加毛玻璃框样式 */
+.time-display {
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: fontxi;
+    position: absolute; /* 绝对定位 */
+    left: 50%; /* 移动到容器的50%位置 */
+    transform: translateX(-50%);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 10px;
+  }
+  .blur-container {
+    background-color: rgba(89, 89, 89, 0.6);
+    backdrop-filter: blur(5px); /* 添加毛玻璃效果 */
+    padding: 5px 10px;
+    border-radius: 10px;
+    color: white;
+  }
+  .arrow-buttons {
+    display: flex;
+    align-items: center;
+}
+
+#speedBtn {
+    width: 40px;
+    height: 43px;
+    padding: 10px;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    font-family: FONTXI;
+    background-color: rgba(89, 89, 89, 0.6);
+    backdrop-filter: blur(10px);
+    border-radius: 8px;
+    padding: 8px;
+    margin-left: 5px;
+    cursor: pointer;
+    color:white;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+   
+    background-color: rgba(89, 89, 89, 0.6);
+    transition: background-color 0.3s ease;
+}
+
+#speedBtn.active {
+    background-color:#0078D3 ;
+    color: white;
+    font-family: FONTXI;
+    
+}
+.volume-popup {
+    position: absolute;
+    display: none;
+    flex-direction: row;
+    align-items: center;
+    padding: 10px;
+    z-index: 1000; /* 确保弹窗在最前 */
+    opacity: 0; /* 初始透明度 */
+    transform: translateY(10px); /* 初始位置 */
+    transition: opacity 0.3s ease, transform 0.3s ease; /* 添加过渡效果 */
+    background-color: rgba(89, 89, 89, 0.25);
+backdrop-filter: blur(6px);
+-webkit-backdrop-filter: blur(6px);
+border: 1px solid rgba(255, 255, 255, 0.18);
+box-shadow: rgba(14, 14, 14, 0.19) 0px 6px 15px 0px;
+-webkit-box-shadow: rgba(14, 14, 14, 0.19) 0px 6px 15px 0px;
+border-radius: 12px;
+-webkit-border-radius: 12px;
+color: rgb(128, 128, 128);
+font-family: nasa;
+border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.volume-popup.show {
+    display: flex; /* 显示弹窗 */
+    opacity: 1; /* 最终透明度 */
+    transform: translateY(0); /* 最终位置 */
+}
+
+.volume-popup img {
+    width: 24px; /* 根据需要调整图标大小 */
+    margin-right: 10px;
+}
+
+.volume-popup input[type="range"] {
+    width: 150px; /* 根据需要调整宽度 */
+    margin: 0 10px;
+    -webkit-appearance: none; /* 移除默认样式 */
+    background: transparent; /* 背景色透明，以便看到渐变 */
+    height: 5px;
+    border-radius: 5px;
+    outline: none;
+}
+
+.volume-popup input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; /* 移除默认样式 */
+    width: 24px; /* 滑块宽度 */
+    height: 35px; /* 滑块高度 */
+    background: url('png/why.png') no-repeat center; /* 滑块图标 */
+    background-size: contain;
+    cursor: pointer;
+    border: none; /* 移除边框 */
+}
+
+.volume-popup input[type="range"]::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+    background: url('png/why.png') no-repeat center;
+    background-size: contain;
+    cursor: pointer;
+    border: none;
+}
+
+.volume-popup input[type="range"]::-ms-thumb {
+    width: 24px;
+    height: 24px;
+    background: url('png/why.png') no-repeat center;
+    background-size: contain;
+    cursor: pointer;
+    border: none;
+}
+
+.volume-popup input[type="range"]::-webkit-slider-runnable-track {
+    background: linear-gradient(to right, #0078D3 var(--value), #ddd var(--value)); /* 背景色 */
+    height: 5px;
+    border-radius: 5px;
+}
+
+.volume-popup input[type="range"]::-moz-range-track {
+    background: linear-gradient(to right, #0078D3 var(--value), #ddd var(--value)); /* 背景色 */
+    height: 5px;
+    border-radius: 5px;
+}
+
+.volume-popup input[type="range"]::-ms-track {
+    background: linear-gradient(to right, #0078D3 var(--value), #ddd var(--value)); /* 背景色 */
+    height: 5px;
+    border-radius: 5px;
+}
+
+.volume-popup #volumeValue {
+    color: white;
+}
+/*通知栏*/
+.notification {
+    position: fixed;
+    top: 85px;
+    left: 0;
+    right: 0;
+    margin: 0 auto;
+    width: 1000px;
+    max-width: 600px;
+    padding: 10px;
+    text-align: left;
+    z-index: 1000;
+    opacity: 1;
+    background-color: rgba(89, 89, 89, 0.25);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: rgba(14, 14, 14, 0.19) 0px 6px 15px 0px;
+    -webkit-box-shadow: rgba(14, 14, 14, 0.19) 0px 6px 15px 0px;
+    border-radius: 12px;
+    -webkit-border-radius: 12px;
+    color: rgb(128, 128, 128);
+}
+
+
+.notification.hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-80px);
+}
+
+.notification h1 {
+    margin: 0 0 10px;
+    font-size: 1.5em;
+    color: #50a2e0; /* 蓝色 */
+    font-family:douyin
+}
+
+.notification p {
+    margin: 0;
+    font-size: 1em;
+    color:white;
+    font-family:FONTXI
+}
+.notification true {
+    margin: 0;
+    font-size: 1.1em;
+    color:green;
+    font-family:FONTXI
+}
+.notification a {
+    margin: 0;
+    font-size: 1.2em;
+    color:#0078D4;
+    font-family:COOL
+}
+/* 启动页样式 */
+
+.loading-text2{
+    text-align: left;
+    vertical-align:text-top;
+    z-index: 1;
+     top: 0;
+     left:0;
+     position:absolute;
+     font-family: fontxi;
+}
+.openpage-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s, visibility 0.3s;
+    color:black;
+    font-family: FONTXI;
+}
+
+.openpage-popup.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.openpage-popup-content {
+    background-color: white;
+    border: 1px solid #000;
+    border-radius: 5px;
+    width: 80%;
+    max-width: 400px;
+    padding: 0;
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    transform: translateY(-50px);
+    transition: transform 0.3s ease-out;
+}
+
+.openpage-popup.show .openpage-popup-content {
+    transform: translateY(0);
+}
+
+.openpage-popup-titlebar {
+    background-color: #d32f2f;
+    color: white;
+    padding: 10px;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    text-align: center;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.openpage-popup-body {
+    padding: 20px;
+    text-align: left;
+}
+
+.openpage-popup-close {
+    background-color: #0078d7;
+    color: white;
+    border: none;
+    border-radius: 0;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    margin: 20px 0 20px 0;
+    transition: background-color 0.3s;
+}
+
+.openpage-popup-close:hover {
+    background-color: #005bb5;
+}
+.openpage-popup a{
+    font-family: Cool;
+    color:#0078D4
+}
+.openpage-popup-close:disabled {
+    background-color: #d3d3d3;  /* Light gray color for disabled state */
+    cursor: not-allowed;
+}
+
+.persistent-watermark {
+    position: fixed;
+    bottom: 100px; /* 距离底部100px */
+    right: 50px; /* 距离右侧50px */
+    color: #888888;
+    padding: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    text-align: center;
+    z-index:9999 ; /* 确保水印覆盖在所有内容之上 */
+    pointer-events: none; /* 确保水印不会阻止用户与页面内容的交互 */
+    font-size: 20px;
+}
+
+.dock-bar {
+    display: flex;
+    align-items: center;
+}
+
+.stop-buttons {
+    display: flex;
+    align-items: center;
+    margin-right: 10px; /* 在日历左侧添加一些间距 */
+    position: absolute; /* 绝对定位 */
+    right: 90px; /* 移动到容器右侧的110px位置 */
+    transform: translateX(-50%);
+}
+
+.dock-bar .stop-buttons button {
+    background-color: rgba(89, 89, 89, 0.6);
+    backdrop-filter: blur(10px);
+    border: none;
+    border-radius: 8px;
+    padding: 8px;
+    margin-left: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    justify-content: flex-end; /* 将所有元素靠右对齐 */
+    border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.dock-bar .stop-buttons button:hover {
+    background-color: #0078D3; /* Sky blue */
+}
+
+.dock-bar .stop-buttons button:focus {
+    outline: none;
+}
+
+.dock-bar .stop-buttons button img {
+    width: 21.5px;
+    height: 21.5px;
+}
+
+
+/*音量按钮*/
+video::-webkit-media-controls-mute-button {
+    display: none;            
+}
+video::-webkit-media-controls-toggle-closed-captions-button {
+    display: none;            
+}
+/*音量的控制条*/
+video::-webkit-media-controls-volume-slider {
+    display: none;            
+}
+/*全屏按钮*/
+video::-webkit-media-controls-fullscreen-button {
+   color:#005a9e;
+   display: none;  
+}
+/* 整体滚动条 */
+::-webkit-scrollbar {
+    width: 12px; /* 滚动条的宽度 */
+    height: 12px; /* 横向滚动条的高度 */
+}
+
+/* 滚动条轨道 */
+::-webkit-scrollbar-track {
+    background-color: #333; /* 滚动条轨道的背景颜色 */
+    border-radius: 10px; /* 圆角 */
+}
+
+/* 滚动条滑块 */
+::-webkit-scrollbar-thumb {
+    background-color: #555; /* 滚动条滑块的颜色 */
+    border-radius: 10px; /* 圆角 */
+    border: 2px solid #333; /* 滚动条滑块的边框颜色 */
+}
+
+/* 滚动条滑块在悬停时的颜色 */
+::-webkit-scrollbar-thumb:hover {
+    background-color: #777; /* 滚动条滑块悬停时的颜色 */
+}
+#ie-popup, #upgrade-popup {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 400px;
+    padding: 20px;
+    background-color: #333;
+    color: #fff;
+    box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.5);
+    border-radius: 10px;
+    z-index: 1000;
+}
+
+#ie-popup h2, #upgrade-popup h2 {
+    margin: 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #555;
+    font-size: 18px;
+}
+
+#ie-popup p, #upgrade-popup p {
+    margin: 15px 0;
+    font-size: 16px;
+}
+
+#ie-popup .browser-version, #upgrade-popup .browser-version {
+    font-size: 14px;
+    margin: 10px 0;
+    color: #ccc;
+}
+
+#ie-popup button, #upgrade-popup button {
+    background-color: #0078d4;
+    color: #fff;
+    border: none;
+    padding: 10px 15px;
+    margin: 10px 5px 0 0;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+#ie-popup button:hover, #upgrade-popup button:hover {
+    background-color: #005a9e;
+}
+
+#ie-popup .close-btn, #upgrade-popup .close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: transparent;
+    border: none;
+    color: #fff;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+#ie-popup .close-btn:hover, #upgrade-popup .close-btn:hover {
+    color: #ccc;
+}
+
+#ie-popup a{
+    color:#0078D4
+}
+
+#overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+}
+
+#upgrade-popup .close-btn {
+    display: none;
+}
+
+#upgrade-popup #skip-upgrade {
+    display: block;
+    background-color: #888;
+    color: #fff;
+    margin: 20px auto 0;
+    width: 100px;
+    text-align: center;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#upgrade-popup #skip-upgrade:hover {
+    background-color: #666;
+}
+
+#upgrade-popup button {
+    background-color: #333;
+    color: #fff;
+    border: 1px solid #555;
+    margin: 10px;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    position: relative;
+    display: inline-block;
+}
+
+#upgrade-popup button:hover {
+    background-color: #222;
+}
+
+#upgrade-popup button::after {
+    content: '';
+    display: block;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 3px;
+    background-color: #0078d4;
+    transition: width 0.3s;
+}
+
+#upgrade-popup button:hover::after {
+    width: 100%;
+}
+
+#overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+}
+.network-status-notification {
+    position: fixed;
+    bottom: 60px; 
+    right: -350px; /* 初始位置完全在屏幕外 */
+    width: 300px;
+    background-color: #333;
+    color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    transition: right 0.5s ease-in-out;
+    z-index: 2147483647;
+    display: flex;
+    align-items: center;
+}
+
+.network-status-notification.visible {
+    right: 20px; /* 滑入到屏幕内 */
+}
+
+.network-status-notification.hidden {
+    right: -350px; /* 滑出到屏幕外 */
+}
+
+.status-text-content {
+    margin-left: 15px;
+}
+
+.network-status-notification h2 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.network-status-notification p {
+    margin-top: 10px;
+    font-size: 14px;
+}
+
+.status-indicator-red, .status-indicator-green {
+    width: 8px;
+    height: 40px; 
+    border-radius: 20px;
+    margin-right: 10px;
+}
+
+.status-indicator-red {
+    background-color: red;
+}
+
+.status-indicator-green {
+    background-color: green;
+}
+
+.status-icon {
+    width: 32px;
+    height: 32px;
+    margin-right: 10px;
+}
+#search-wrapper, #speedBtn, #volumeBtn, #play-pause-btn, #fullscreen-btn, .time-display {
+    display: inline-block; /* 默认显示 */
+}
+/*下面是隐藏dock栏以功能的代码*/
+.hidden {
+    display: none !important; /* 用于隐藏元素的实用类 */
+}
+
+.dock-bar.hidden {
+    bottom: -100px; /* Dock栏隐藏时缓缓下滑 */
+}
+
+#showDockBtn {
+    padding: 5px 10px;
+    border-radius: 8px 8px 0 0;
+    cursor: pointer;
+    font-size: 20px;
+    transition-duration: 0.3s;
+    background-color: rgba(89, 89, 89, 0.25);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: rgba(14, 14, 14, 0.19) 0px 6px 15px 0px;
+    -webkit-box-shadow: rgba(14, 14, 14, 0.19) 0px 6px 15px 0px;
+    color: rgb(128, 128, 128);
+}
+
+#showDockBtn button {
+    background: transparent;
+    border: none;
+    font-size: 24px;
+    color: white;
+    cursor: pointer;
+}
+
+/* 视频放大效果 */
+.video-container.fullscreen {
+    bottom: 0; /* 视频扩展至Dock栏消失的区域 */
+    transition-duration: 0.3s;
+}
+
+/* 浮窗显示当前视频序号和进度 */
+#floatingInfo {
+    position: fixed;
+    top: 10px;
+    right: 100px;
+    color: white;
+    padding: 8px;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    display: none; /* 初始隐藏 */
+    z-index: 1000;
+    text-align: center;
+    font-family: fontxi;
+    background-color: rgba(89, 89, 89, 0.25);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: rgba(14, 14, 14, 0.19) 0px 6px 15px 0px;
+    -webkit-box-shadow: rgba(14, 14, 14, 0.19) 0px 6px 15px 0px;
+    border-radius:8px;
+    -webkit-border-radius: 12p
+}
+
+
+/* 应用按钮的样式 */
+button.apply-btn {
+    background-color: #0078D4; /* 按钮背景色 */
+    color: white; /* 按钮文字颜色 */
+    padding: 10px 20px; /* 内边距 */
+    border: none; /* 去除边框 */
+    border-radius: 5px; /* 圆角 */
+    cursor: pointer; /* 鼠标悬停时显示手型 */
+    transition: background-color 0.3s ease; /* 添加过渡效果 */
+    font-size: 16px; /* 字体大小 */
+    font-family: cool;
+}
+
+button.apply-btn:hover {
+    background-color: #005a9e; /* 鼠标悬停时改变背景色 */
+}
+/*到此结束*/
+#fpsDisplay {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    font-size: 18px;
+    font-family: Arial, sans-serif;
+    padding: 5px 10px;
+    z-index: 1000;
+    transition-duration: 0.3s;
+    font-family: fontxi;
+    background-color: rgba(89, 89, 89, 0.25);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: rgba(14, 14, 14, 0.19) 0px 6px 15px 0px;
+    -webkit-box-shadow: rgba(14, 14, 14, 0.19) 0px 6px 15px 0px;
+    border-radius: 8px;
+    -webkit-border-radius: 8px;
+}
+
+.fps-low {
+    color: red;
+}
+
+.fps-medium {
+    color: yellow;
+}
+
+.fps-high {
+    color: white;
+}
+.notification-popup {
+    position: fixed;
+    bottom: -100px; /* 初始位置隐藏在屏幕外 */
+    right: 20px;
+    padding: 15px;
+    z-index: 9999;
+    width: 250px;
+    transition: bottom 0.5s ease-in-out; /* 弹出动画 */
+    background-color: rgba(89, 89, 89, 0.25);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: rgba(14, 14, 14, 0.19) 0px 6px 15px 0px;
+    -webkit-box-shadow: rgba(14, 14, 14, 0.19) 0px 6px 15px 0px;
+    border-radius: 8px;
+    -webkit-border-radius: 8px;
+    color: white;
+    font-family: Font1;
+}
+
+.notification-popup.show {
+    bottom: 100px; /* 显示时移动到可视区域 */
+}
+
+.notification-popup p {
+    margin: 0;
+    padding: 0;
+}
+
+.notification-close-icon {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+}
+.notification-popup button {
+    background-color: transparent; /* 透明背景 */
+    border: none; /* 去掉边框 */
+    color: white; /* 白色字体 */
+    cursor: pointer; /* 鼠标样式 */
+    margin-top: 10px; /* 上边距 */
+    display: flex; /* 使用flex布局 */
+    align-items: center; /* 垂直居中对齐 */
+    font-family: fontxi;
+}
+#fullscreen-alert {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    display: none;
+    z-index: 1000;
+    font-family: FontHei;
+    background-color: rgba(89, 89, 89, 0.25);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: rgba(14, 14, 14, 0.19) 0px 6px 15px 0px;
+    -webkit-box-shadow: rgba(14, 14, 14, 0.19) 0px 6px 15px 0px;
+    border-radius: 12px;
+    -webkit-border-radius: 12px;
+    animation: borderFlash 1s infinite;
+    box-sizing: border-box;
+}
+
+@keyframes borderFlash {
+    0% {
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        box-shadow: 0 0 20px red;
+    }
+    50% {
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        box-shadow: 0 0 0px red;
+    }
+    100% {
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        box-shadow: 0 0 20px red;
+    }
+}
+#fullscreen-alert button {
+    margin-top: 10px;
+    padding: 10px 20px;
+    background-color: #0078D4;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#fullscreen-alert button:hover {
+    background-color: #005a9e;
+}
+.VideoOptimization-popup {
+    position: fixed;
+    right: -300px; /* 初始位置在屏幕外 */
+    width: 300px;
+    padding: 20px;
+    border-radius: 10px;
+    opacity: 0; /* 初始透明度为0 */
+    transition: right 0.5s ease-in-out, opacity 0.5s ease-in-out; /* 滑入和滑出动画 */
+    z-index: 10000;
+    background-color: rgba(89, 89, 89, 0.25);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: rgba(14, 14, 14, 0.19) 0px 6px 15px 0px;
+    -webkit-box-shadow: rgba(14, 14, 14, 0.19) 0px 6px 15px 0px;
+    border-radius: 12px;
+    -webkit-border-radius: 12px;
+    color: rgb(128, 128, 128);
+}
+
+.VideoOptimization-popup h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #50a2e0;
+    font-family: douyin;
+}
+
+.VideoOptimization-popup p {
+    font-size: 14px;
+    color: white;
+    margin-top: 10px;
+    font-family: FONTXI;
+}
+
+.undo-btn {
+    background-color: transparent;
+    border: none;
+    color: #50a2e0;
+    font-size: 14px;
+    cursor: pointer;
+    margin-top: 10px;
+    text-align: right;
+    display: block;
+    font-family: douyin;
+}
+
+.undo-btn:hover {
+    color: #0078D4;
+}
+/* 操作中心 */
+.actioncenter-panel {
+    position: fixed;
+    right: -355px; 
+    top: 0;
+    width: 300px;
+    height: 100%;
+    color: white;
+    padding: 20px;
+    transition: right 0.5s ease;
+    z-index: 9000;
+    font-family: fontxi;
+    background-color: rgba(89, 89, 89, 0.25);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: rgba(14, 14, 14, 0.19) 0px 6px 15px 0px;
+    -webkit-box-shadow: rgba(14, 14, 14, 0.19) 0px 6px 15px 0px;
+}
+
+.actioncenter-panel.visible {
+    right: 0; /* 呼出时滑动到完全显示 */
+}
+
+/* 日期与时间组件 */
+.actioncenter-time-widget {
+    text-align: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2); /* 底部线条分隔 */
+}
+
+.actioncenter-now-time {
+    font-size: 36px;
+    font-weight: bold;
+    color: #FFFFFF;
+}
+
+.actioncenter-now-date {
+    font-size: 14px;
+    color: #AAAAAA;
+}
+
+/* 操作中心选项 */
+.actioncenter-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s, border-left 0.3s;
+    position: relative;
+    padding: 10px 20px;
+    border-radius: 5px;
+}
+
+.actioncenter-item img {
+    width: 24px;
+    height: 24px;
+    margin-right: 10px;
+}
+
+.actioncenter-item:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 5px;
+
+}
+/* 展开操作中心的三角形按钮样式 */
+.triangle-left {
+    position: fixed;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 24px;
+    padding: 10px;
+    border-radius: 8px 0 0 8px;
+    color: white;
+    cursor: pointer;
+    z-index: 1000;
+    transition: background-color 0.3s ease;
+    background-color: rgba(89, 89, 89, 0.25);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: rgba(14, 14, 14, 0.19) 0px 6px 15px 0px;
+    -webkit-box-shadow: rgba(14, 14, 14, 0.19) 0px 6px 15px 0px;
+}
+
+.triangle-left:hover {
+    background-color: #0078D4;
+}
+/* 控制中心选项按压效果（去除背景色变化，仅保留按压缩小效果） */
+.actioncenter-item {
+    position: relative;
+    overflow: hidden; /* 防止波纹溢出 */
+}
+
+.actioncenter-item:active {
+    transform: scale(0.98); /* 按下时稍微缩小 */
+}
+
+/* 波纹效果：只有在按下选项时才显示 */
+.actioncenter-item:active::after {
+    content: '';
+    position: absolute;
+    width: 300%;
+    height: 300%;
+    background: white; /* 波纹颜色为白色 */
+    animation: ripple 0.6s ease-out; /* 波纹动画效果 */
+    pointer-events: none; /* 确保波纹不会阻挡点击 */
+    transform: scale(0); /* 从按压位置开始 */
+    opacity: 1; /* 初始波纹完全可见 */
+}
+
+/* 波纹动画效果 */
+@keyframes ripple {
+    to {
+        transform: scale(1); /* 波纹从按下位置向外扩展 */
+        opacity: 0; /* 波纹扩展后透明度逐渐变为0 */
+    }
+}
+
+
+
+
+.browser-container {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: 80vw;
+    height: 70vh;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+}
+
+.browser-header {
+    background-color: #333;
+    color: white;
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 10px 10px 0 0;
+}
+
+.browser-header #browserTitle {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.browser-controls button {
+    background-color: #555;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    margin-left: 5px;
+}
+
+.browser-controls button:hover {
+    background-color: #777;
+}
+
+#browserIframe {
+    width: 100%;
+    height: calc(100% - 40px); /* 保证iframe不超出背景区域 */
+    border: none;
+    border-radius: 0 0 10px 10px;
+}
+
+.browser-container.fullscreen {
+    width: 100vw;
+    height: 100vh;
+    top: 0;
+    left: 0;
+    transform: none;
+    border-radius: 0;
+}
+
+.browser-container.minimized {
+    height: 40px;
+}
+
+    /* Why图标的样式 2024/11/11 Update For 8.2.5*/
+    .favorite-icon {
+        position: absolute;
+        width: 50px;
+        height: 50px;
+        background-image: url('png/why.png');
+        background-size: cover;
+        background-position: center;
+        border-radius: 50%;
+        opacity: 0;
+        transform: scale(0);
+        animation: scaleAndMoveUp 1s ease forwards;
+        z-index: 0; 
+      }
+
+          /* 动画效果：放大并上滑 */
+    @keyframes scaleAndMoveUp {
+        0% {
+          transform: scale(0) translateY(0);
+          opacity: 1;
+        }
+        50% {
+          transform: scale(1.2) translateY(-30px);
+        }
+        100% {
+          transform: scale(0) translateY(-60px);
+          opacity: 0;
+        }
+      }
+ /* 2024.11.12 8.2.5Update 资讯与节日 */
+.WhyVideos_News_holiday-icon {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    background-size: cover;
+    background-repeat: no-repeat;
+    opacity: 0.7;
+    pointer-events: auto;
+    transition: opacity 0.3s, transform 0.3s;
+    cursor: pointer;
+}
+
+/* 点击按下效果 */
+.WhyVideos_News_holiday-icon:active {
+    transform: scale(0.9); /* 缩放效果 */
+}
+
+/* 节日名称样式 */
+.WhyVideos_News_holiday-name {
+    position: fixed;
+    bottom: 25px;
+    right: 80px;
+    font-size: 30px;  /* 大字体 */
+    color: white;
+    font-weight: bold;
+    opacity: 0;
+    transition: opacity 0.3s, right 0.3s;
+}
+
+/* 节日信息框 */
+.WhyVideos_News_holiday-info {
+    position: fixed;
+    bottom: 100px;
+    right: 80px;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    max-width: 400px; /* 更宽的框 */
+    min-height: 100px; /* 增加最小高度 */
+    display: none;
+    opacity: 0;
+    transform: translateX(100%);  /* 初始位置在屏幕外 */
+    transition: opacity 0.5s, transform 0.5s; /* 增加弹入特效 */
+    overflow-y: auto; /* 使内容可以滚动 */
+    background-color: rgba(89, 89, 89, 0.2);
+    backdrop-filter: blur(30px);
+    -webkit-backdrop-filter: blur(30px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: rgba(14, 14, 14, 0.19) 0px 6px 15px 0px;
+    -webkit-box-shadow: rgba(14, 14, 14, 0.19) 0px 6px 15px 0px;
+    border-radius: 12px;
+    -webkit-border-radius: 12px;
+}
+
+/* 节日信息框中的内容样式 */
+.WhyVideos_News_holiday-info .WhyVideos_News_date {
+    font-size: 22px; /* 日期字体增大 */
+    margin-bottom: 10px;
+    font-family: FONTHEI;
+}
+
+.WhyVideos_News_holiday-info .WhyVideos_News_description {
+    font-size: 18px; 
+    font-family: Font1;
+}
+
+.hidden {
+    opacity: 0;
+}
+
+
+/*浅色模式*/
+.light-theme {
+    background-color: #f5f5f5;
+    color: #333;
+}
+
+.light-theme .header {
+    background-color: rgba(255, 255, 255, 0.25);
+    color: black
+}
+
+.light-theme .controls button {
+    background-color: rgba(255, 255, 255, 0.25);
+    color: #333;
+}
+
+.light-theme .custom-alert {
+    background-color: #fff;
+    color: #333;
+}
+.light-theme .dock-bar{
+background-color: rgba(255, 255, 255, 0.25);
+color: black
+}
+.light-theme .container{
+    background-color: white;
+color: black
+}
+.light-theme .tab .about-header .close-btn .search-box{
+    background-color: rgba(255, 255, 255, 0.25);
+color:black
+}
+.light-theme .context-menu{
+    background-color: rgba(255, 255, 255, 0.25);
+    color:#000;
+    box-shadow: rgba(50, 50, 93, 0.25) 0px 13px 27px -5px, rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
+}
+.light-theme .container h1{
+    color: black
+}
+.light-theme .tab{
+    background-color: rgba(255, 255, 255, 0.25);
+    color:#000
+}
+.light-theme .tab.active{
+    background-color: #0078D4;
+    color:white
+}  
+.light-theme .sidebar{
+    background-color: rgba(255, 255, 255, 0.25);
+    color:#000
+}
+.light-theme .container p{
+    color: black
+}
+.light-theme .button{
+    background-color: #D5D5D5;
+    color:black
+}
+.light-theme .arrow-buttons{
+    background-color: rgba(255, 255, 255, 0.2);
+}
+.light-theme .time{
+    color:#000
+}
+.light-theme .holiday-name{
+    color:black
+}
+.light-theme .actioncenter-panel{
+    background-color: rgba(255, 255, 255, 0.25);
+}
+.light-theme .actioncenter-now-time{
+    color:#000
+}
+.light-theme .actioncenter-now-date{
+    color:black
+}
+.light-theme a{
+    color:#0078D4
+}
+.light-theme .holiday-info{
+    background-color: rgba(255, 255, 255, 0.25);
+}
+.light-theme .dock-bar time{
+    background-color: rgba(255, 255, 255, 0.25);
+}
+.light-theme .dock-bar .time-container{
+    background-color: rgba(255, 255, 255, 0.25);
+}
+.light-theme .browser-header{
+    background-color: #0078D4;
+}

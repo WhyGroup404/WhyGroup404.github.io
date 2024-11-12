@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="utf-8">
+    <title>黑猩科技 - Why视频网页转制版</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="png/why.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="png/why.ico" type="image/x-icon">
+</head>
+
+<body>
+    <!-- 右键菜单 -->
+    <div class="context-menu" id="contextMenu">
+        <div class="context-menu-item" id="prevVideo">
+            <img src="png/back.png" alt="uplogo" width="17" height="17"> 上一个视频
+        </div>
+        <div class="context-menu-item" id="nextVideo">
+            <img src="png/next.png" alt="downlogo" width="17" height="17"> 下一个视频
+        </div>
+        <div class="context-menu-item" id="prevStep">
+            <img src="png/back2.png" alt="Backlogo" width="17" height="17"> 返回
+        </div>
+        <div class="context-menu-item" id="nextStep">
+            <img src="png/goto.png" alt="gotologo" width="17" height="17"> 前进
+        </div>
+        <div class="context-menu-item" id="refreshPage">
+            <img src="png/Load.png" alt="lodlogo" width="17" height="17"> 刷新
+        </div>
+        <div class="context-menu-item" id="versionOption">
+            <img src="png/Settings.png" alt="heplogo" width="17" height="17"> Why视频 Version 8.2.5
+        </div>
+    </div>
+
+    <!-- 弹窗 -->
+    <script>
+        function toggleCustomAlert() {
+            var customAlert = document.getElementById("customAlert");
+            customAlert.style.display = customAlert.style.display === "block" ? "none" : "block";
+        }
+    </script>
+
+   <div class="custom-alert" id="customAlert">
+    <h2>内部版本8.2.5(官方版本)</h2>
+    <p>无话可说</p >
+    <p>本次5.0更新:重构部分内核</p>
+    <p>浙江爱佳科技技术有限公司©Copyright</p>
+    <p>台州王浩哥集团有限公司&copy;Copyright</p>
+    <button onclick="toggleCustomAlert();">关闭</button>
+  </div>
+
+    <!-- 版本信息 -->
+    <div id="VersionText">Why Videos 8.2.5 网页版</div>
+
+    <header class="header">
+        <h1>Why视频</h1>
+        <p class="subtitle">海量高清离线视频资源</p>
+    </header>
+    <button id="aboutBtn"onclick="showCustomAlert();"><img src="png/help.png" alt="about" id="aboutImage">帮助与关于</button>
+
+    <!-- 视频播放器 -->
+    <div class="video-container">
+        <video id="myVideo" controls autoplay>
+            <source src="" type="video/mp4"> 您的浏览器不支持视频标签。
+        </video>
+
+        <div class="controls">
+            <button id="prevBtn">上一个</button>
+            <button id="playBtn">暂停</button>
+            <button id="nextBtn">下一个</button>
+        </div>
+    </div>
+
+    <!-- 设置面板 -->
+    <div class="container" style="display: none;">
+        <div class="close-btn" onclick="closeWindow()">&#10006;</div>
+        <div class="sidebar">
+            <h1>设置</h1>
+            <div class="tab" onclick="openTab('playback')">播放设置</div>
+            <div class="tab" onclick="openTab('info')">调试信息</div>
+            <div class="tab" onclick="openTab('dock-settings')">Dock栏设置</div>
+            <div class="tab" onclick="openTab('help')">帮助</div>
+            <div class="tab active" onclick="openTab('about')">关于Why视频</div>
+        </div>
+        <div class="content">
+            <!-- 各页面内容 -->
+
+            <div id="playback" class="page">
+                <h1>播放设置</h1>
+                <input type="checkbox" id="autoplayCheckbox" onchange="toggleAutoplay()" checked="checked"> 自动连播(默认开启)
+                <p>“自动连播”功能可以在放完一个视频后自动续播下一个视频。</p>
+                <input type="checkbox" id="optimizeVideoQualityCheckbox" onchange="toggleOptimizeQuality()"> 优化视频质量 (默认关闭)
+                <p>启用该选项时，将跳过超过 <input type="number" id="videoLengthInput" value="3" min="1" style="width: 50px;"> 分钟的视频。</p>
+            </div>
+
+            <div id="info" class="page">
+                <h1>调试信息</h1>
+                <p>CurrentVersion: 8.2.5.11.24</p>
+                    <p><strong>设备类型:</strong> <span id="whyDeviceType"></span></p>
+                    <p><strong>设备系统:</strong> <span id="whyOSVersion"></span></p>
+                    <p><strong>浏览器:</strong> <span id="whyBrowserDetails"></span></p>
+                <p>Build 108</p>
+            </div>
+           
+            <div id="dock-settings" class="page">
+                <h1>Dock栏设置</h1>         
+                <h2>Dock栏组件</h2>
+                <input type="checkbox" id="toggleSearchBtn" checked> 显示搜索按钮 <br>
+                <input type="checkbox" id="toggleSwitchBtn" checked> 显示上下切换按钮 <br>
+                <input type="checkbox" id="toggleSpeedBtn" checked> 显示倍速按钮 <br>
+                <input type="checkbox" id="toggleVolumeBtn" checked> 显示音量按钮 <br>
+                <input type="checkbox" id="toggleProgressBtn" checked> 显示视频数字进度 <br>
+                <input type="checkbox" id="toggleFullscreenBtn" checked> 显示全屏按钮 <br>
+                <select id="dateTimeDisplay">
+                    <option value="showDateTime">显示日期与时间</option>
+                    <option value="showDateOnly">仅显示日期</option>
+                    <option value="showTimeOnly">仅显示时间</option>
+                    <option value="hideDateTime">关闭</option>
+                </select>
+            
+                <h2>Dock栏全局</h2>
+                <input type="checkbox" id="autoHideDock"> 自动隐藏Dock栏 <br>
+            
+                <!-- 应用按钮放置在右下角 -->
+                <div style="text-align: right; margin-top: 20px;">
+                    <button class="apply-btn" onclick="applyDockSettings()">Apply/应用</button>
+                </div>
+            </div>
+
+            <div id="help" class="page">
+                <h1>帮助</h1>
+                <p>网页版暂不支持此选项。</p>
+            </div>
+
+            <div id="about" class="page active">
+                <div class="about-header">Why 8.2.5 Release</div>
+                <div class="about-content">
+                    <p>Why视频网页版</p>
+                    <p>2024年秋季更新(Version 8.2.5 Build 108)</p>
+                    <p>核心文件精简整理，运行更加快速高效。</p>
+                    <p>8.0全新版本！带来Dock栏改进与重大错误修复。</p>
+                    <p>8.2.5更新:全新的功能 欢迎体验！</p>
+                    <p>开始使用则代表您同意<a href="Protocol/index.html" target="_blank">《Why视频用户使用协议》</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="developerModePopup" class="custom-alert">
+        <h2>Why视频开发者模式</h2>
+        <label><input type="checkbox" id="classicControlsCheckbox"> 启用经典控制栏</label><br>
+        <label><input type="checkbox" id="classicAboutBtnCheckbox"> 启用经典关于按钮</label><br>
+        <input type="checkbox" id="themeToggle" onchange="toggleTheme()" checked> 深色模式（默认）<br>
+        <button onclick="applyDeveloperSettings()">应用/Apply</button>
+    </div>
+    <div id="conflictPopup" class="custom-alert">
+        <h2>⚠Superlative kernel warnings⚠</h2>
+        <p>检测到经典控制栏和Dock栏同时开启，为了避免冲突，请关闭之一。</p>
+        <button onclick="closeDock()">关闭Dock栏</button>
+        <button onclick="closeClassicControls()">关闭经典控制栏</button>
+        <button onclick="continueWithBoth()">Exit</button>
+    </div>
+    <div class="custom-alert" id="search-error" style="display: none;">
+        <div class="alert-content">
+            <h2>Why Videos Error</h2>
+            <span id="alertMessage">这是一个警告消息！</span>
+            <p></p>
+            <button id="closeAlert">关闭</button>
+        </div>
+    </div>
+<!-- 底部显示的小三角形按钮 -->
+<div id="showDockBtn" style="position: fixed; bottom: 5px; left: 50%; transform: translateX(-50%); display: none;">
+    <button onclick="showDockBar()">▲</button>
+</div>
+<!-- 右上角显示的浮窗 -->
+<div id="floatingInfo">
+    当前视频序号: <span id="videoIndex">ERROR</span><br>
+    <span id="currentTimeDisplayFloating">00:00</span> / <span id="totalTimeDisplayFloating">00:00</span>
+</div>
+    <!-- Dock栏 -->
+    <div class="dock-bar">
+        <div class="icon-container">
+            <div class="icon-wrapper">
+                <img src="png/settings.png" alt="Settings" class="settings-icon">
+            </div>
+            <div class="search-wrapper" id="search-wrapper">
+                <div class="icon-wrapper" id="search-icon">
+                    <img src="png/search.ico" alt="Search" class="search-icon">
+                    <span>搜索</span>  <!-- 文本部分 -->
+                </div>
+            </div>
+            <div class="arrow-buttons">
+                <button><img src="png/up.ico" alt="Up"></button>
+                <button><img src="png/down.ico" alt="NextBtn"></button>
+                <button id="volumeBtn" style="background-color: red;">
+                    <img src="png/mute.ico" alt="Volume">
+                </button>
+            </div>
+            <div class="stop-buttons">
+                <button id="fullscreen-btn" class="dock-button">
+                    <img src="png/fullscreen-icon.png" alt="Fullscreen">
+                </button>
+                <button id="speedBtn">1x</button>
+                <button id="hideDockBar" class="dock-button" onclick="hideDockBar()" >
+                     <img src="png/hidedock.png" alt="hidedock">
+                </button>
+            </div>
+        </div>
+
+        <div class="time-display" id="timeDisplay">
+            <div class="blur-container">
+                <span id="currentTimeDisplay">00:00</span>/<span id="totalTimeDisplay">00:00</span>
+                <span class="video-index-text">当前视频</span>
+                <span id="currentVideoIndex">Na</span>
+            </div>
+        </div>
+        <div class="time" id="time">
+            <div class="clock"></div>
+            <div class="date" id="date"></div>
+        </div>
+    </div>
+
+    <!-- 弹窗遮罩 -->
+    <div class="overlay" id="overlay"></div>
+
+    <!-- 日期弹窗 -->
+<div class="date-popup" id="date-popup">
+    <div class="time-container">
+        <div class="clock-large" id="clock-large"></div>
+        <div class="date-large" id="date-large"></div>
+    </div>
+    
+    <div class="divider"></div> <!-- 分隔线 -->
+
+    <div class="calendar">
+        <div class="month-nav">
+            <button id="prev-month">&lt;</button> <!-- 上一个月按钮 -->
+            <h3 id="current-month"></h3>
+            <button id="next-month">&gt;</button> <!-- 下一个月按钮 -->
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Sun</th>
+                    <th>Mon</th>
+                    <th>Tue</th>
+                    <th>Wed</th>
+                    <th>Thu</th>
+                    <th>Fri</th>
+                    <th>Sat</th>
+                </tr>
+            </thead>
+            <tbody id="calendar-body">
+                <!-- 日历日期将会通过 JavaScript 动态注入 -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 弹窗遮罩 -->
+<div class="overlay" id="overlay"></div>
+
+
+<!-- 弹窗遮罩 -->
+<div class="overlay" id="overlay"></div>
+
+
+    <!-- 搜索 -->
+    <div class="search-container" id="searchContainer" style="color: white;">
+        <input type="text" class="search-box" id="searchInput" placeholder="在此键入搜索视频序号">
+        <img src="png/search_white.png" alt="Search" id="searchIcon">
+    </div>
+
+    <!-- 音量弹窗 -->
+    <div id="volumePopup" class="volume-popup">
+        <img src="png/mute.ico" id="volumeIcon" alt="Volume Icon">
+        <input type="range" id="volumeSlider" min="0" max="100" value="0">
+        <span id="volumeValue">0%</span>
+    </div>
+
+    <!-- 通知弹窗 -->
+    <div id="notification-bar" class="notification hidden">
+        <h1>欢迎使用Why视频Release(版本8.2.5.20241111)</h1>
+        <p><true>✔</true>8.2.5</p>
+        <p>一旦开始使用代表您已阅读并同意《用户使用协议》。</p>
+    </div>
+
+
+    <!-- 水印 -->
+    <aside class="persistent-watermark">
+        <br> 
+    </aside>
+
+    <div id="fpsDisplay">FPS: 0</div>
+
+<!-- 仿Win10右下角通知弹窗 -->
+<div id="saveVideoNotification" class="notification-popup">
+    <p id="notificationText">上一次看到 Video </p>
+    <img src="png/exit.png" id="closeNotificationIcon" alt="关闭" class="notification-close-icon">
+    <button id="jumpToVideoBtn">
+        <img src="png/goto.png" alt="跳转" style="width: 16px; height: 16px;"> 跳转
+    </button>
+</div>
+<div class="VideoOptimization-popup" id="VideoOptimizationPopup" style="display:none;">
+    <h3>视频质量优化</h3>
+    <p id="skipMessage"></p>
+    <button class="undo-btn" onclick="undoSkip()">撤销 →</button>
+</div>
+<!-- 展开操作中心按钮 -->
+<div id="expandActionCenterBtn" class="triangle-left" onclick="showActionCenter()">
+    &#9664; <!-- ← 三角形 -->
+</div>
+<!-- 操作中心 -->
+<div id="actioncenterPanel" class="actioncenter-panel">
+    <!-- 顶部日期与时间小组件 -->
+    <div class="actioncenter-time-widget">
+        <div id="actioncenterNowTime" class="actioncenter-now-time">00:00</div>
+        <div id="actioncenterNowDate" class="actioncenter-now-date">YYYY-MM-DD</div>
+    </div>
+    <!-- 操作中心 -->
+    <div class="actioncenter-item" id="actioncenterPrevVideo">
+        <img src="png/back.png" alt="Previous"> 上一个视频
+    </div>
+    <div class="actioncenter-item" id="actioncenterNextVideo">
+        <img src="png/next.png" alt="Next"> 下一个视频
+    </div>
+    <div class="actioncenter-item" id="actioncenterSearch">
+        <img src="png/search.ico" alt="Search"> 搜索
+    </div>
+    <div class="actioncenter-item" id="actioncenterSettings">
+        <img src="png/settings.png" alt="Settings"> 设置
+    </div>
+    <div class="actioncenter-item" id="actioncenterAutoplay">
+        <img src="png/autoplay.png" alt="Autoplay"> 自动连播 <span id="autoplayStatus"></span>
+    </div>
+    <div class="actioncenter-item" id="actioncenterOptimizeVideo">
+        <img src="png/optimize.png" alt="Optimize Video"> 视频质量优化 <span id="optimizeStatus"></span>
+    </div>
+    <div class="actioncenter-item" id="actioncenterRefresh">
+        <img src="png/Refresh-White.png" alt="Refresh"> 刷新
+    </div>
+    <div class="actioncenter-item" id="actioncenterHide">
+        <img src="png/goto.png" alt="Hide"> 隐藏操作中心
+    </div>
+</div>
+
+<div id="internalBrowser" class="browser-container" style="display: none;">
+    <div class="browser-header">
+        <span id="browserTitle">Why视频内置浏览器</span>
+        <div class="browser-controls">
+            <button id="minimizeBtn">最小化</button>
+            <button id="fullscreenBtn">全屏</button>
+            <button id="closeBrowserBtn">关闭</button>
+        </div>
+    </div>
+    <iframe id="browserIframe" src="about:blank"></iframe>
+</div>
+
+<!-- 节日图标 -->
+<div id="WhyVideos_News_holiday-icon" class="WhyVideos_News_holiday-icon hidden"></div>
+
+<!-- 节日名称 -->
+<div id="WhyVideos_News_holiday-name" class="WhyVideos_News_holiday-name"></div>
+
+<!-- 节日信息框 -->
+<div id="WhyVideos_News_holiday-info" class="WhyVideos_News_holiday-info">
+    <div id="WhyVideos_News_holiday-date" class="WhyVideos_News_date"></div>
+    <div id="WhyVideos_News_holiday-description" class="WhyVideos_News_description"></div>
+</div>
+
+
+    <script src="JS/noties.js"></script> <!-- 通知栏 -->
+    <script src="JS/dock-volume.js"></script> <!-- Dock栏音量调节 -->
+    <script src="JS/contextmenu.js"></script> <!-- 右键菜单 -->
+    <script src="JS/dock-time.js"></script> <!-- Dock栏时间 -->
+    <script src="JS/dock-videotime.js"></script> <!-- Dock栏视频时间 -->
+    <script src="JS/Settings.js"></script> <!-- 设置面板 -->
+    <script src="JS/touch.js"></script> <!-- 触摸 -->
+    <script src="JS/dock-speed.js"></script> <!-- Dock栏倍速按钮 -->
+    <script src="JS/OSinfo.js"></script> <!-- 客户端环境 -->
+    <script src="JS/search.js"></script> <!-- 搜索 -->
+    <script src="JS/settings-backversion.js"></script> <!-- 版本切换 -->
+    <script src="JS/dockbutton2.js"></script><!-- Dock右侧新增BTN -->
+    <script src="JS/oldBrowser.js"></script><!-- 浏览器版本检测 -->
+    <script src="JS/internet.js"></script><!--联网检测 -->
+    <script src="JS/currentversion.js.bak"></script><!-- 版本信息 -->
+    <script src="JS/docksettings.js"></script><!-- dock设置 -->
+    <script src="JS/FPS.js"></script>
+    <script src="JS/savevideoindex.js"></script>
+    <script src="JS/AutoSearchBox.js"></script>
+    <script src="JS/developermode.js"></script>
+    <script src="JS/keyboard.js"></script><!-- 键盘鼠标翻页笔适配 -->
+    <script src="Js/optimize.js"></script>
+    <script src="JS/lightmode.js"></script>
+    <script src="JS/actioncenter.js"></script>
+    <script src="JS/browser.js"></script>
+    <script src="JS/favorite.js"></script>
+    <script src="Js/holiday.js"></script>
+
+    <script>
+        var videoIndex = 1;
+        var video = document.getElementById("myVideo");
+        var source = video.getElementsByTagName("source")[0];
+        var autoplayEnabled = true;
+
+          // 初始化页面时加载第一个视频
+          changeVideo();
+
+        function changeVideo() {
+            source.setAttribute("src", "files/video" + videoIndex + ".mp4");
+            video.load();
+            video.play();
+            document.getElementById("currentVideoIndex").innerText = "" + videoIndex;
+
+            var speedBtn = document.getElementById("speedBtn");
+            video.playbackRate = 1;
+            speedBtn.innerText = "1x";
+            speedBtn.classList.remove("active");
+        }
+
+        document.getElementById("prevBtn").addEventListener("click", function () {
+            if (videoIndex > 1) {
+                videoIndex--;
+                changeVideo();
+            }
+        });
+
+        document.getElementById("nextBtn").addEventListener("click", function () {
+            if (videoIndex < 100000) {
+                videoIndex++;
+                changeVideo();
+            }
+        });
+
+        var playBtn = document.getElementById("playBtn");
+        playBtn.addEventListener("click", function () {
+            if (video.paused) {
+                video.play();
+                playBtn.innerHTML = "暂停";
+            } else {
+                video.pause();
+                playBtn.innerHTML = "播放";
+            }
+        });
+
+        video.addEventListener("ended", function () {
+            if (autoplayEnabled && videoIndex < 100000) {
+                videoIndex++;
+                changeVideo();
+            }
+        });
+
+        function toggleAutoplay() {
+            autoplayEnabled = !autoplayEnabled;
+        }
+
+    </script>
+
+</body>
+
+</html>
