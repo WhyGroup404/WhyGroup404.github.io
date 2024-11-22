@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZZY专用序号抽取系统</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #e6f7e0;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+        }
+
+        h1 {
+            color: #008000;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .number-display {
+            font-size: 10rem;
+            font-weight: bold;
+            color: #4CAF50;
+            margin-bottom: 40px;
+        }
+
+        .button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            font-size: 1rem;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        .button:hover {
+            background-color: #45a049;
+        }
+
+        .settings-popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #ffffff;
+            border: 2px solid #4CAF50;
+            border-radius: 10px;
+            padding: 20px;
+            width: 80%;
+            max-width: 400px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 999;
+        }
+
+        .settings-popup input {
+            padding: 10px;
+            margin: 10px 0;
+            width: 100%;
+            font-size: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .settings-popup button {
+            width: 100%;
+            background-color: #008000;
+            color: white;
+            padding: 10px;
+            border: none;
+            font-size: 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .settings-popup button:hover {
+            background-color: #006400;
+        }
+
+        .settings-btn {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background-color: #008000;
+            color: white;
+            padding: 10px;
+            border: none;
+            font-size: 1rem;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .version-info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 1rem;
+            color: #333;
+        }
+
+        /* Responsive for mobile */
+        @media (max-width: 768px) {
+            .number-display {
+                font-size: 3rem;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .button {
+                padding: 8px 15px;
+                font-size: 0.9rem;
+            }
+
+            .settings-popup input,
+            .settings-popup button {
+                font-size: 1rem;
+            }
+            .number-display{
+                font-size: 7rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="version-info" id="versionInfo">版本号: 1.0.0   詹珍怡&copy;版权所有 2024</div>
+    <h1>ZZY专用序号抽取系统</h1>
+    <div class="number-display" id="numberDisplay">0</div>
+    <button class="button" id="startButton">开始抽取</button>
+
+    <button class="settings-btn" id="settingsBtn">设置</button>
+
+    <div class="settings-popup" id="settingsPopup">
+        <h2>设置</h2>
+        <label for="minValue">最小值</label>
+        <input type="number" id="minValue" value="1" min="1">
+
+        <label for="maxValue">最大值</label>
+        <input type="number" id="maxValue" value="20" min="1">
+
+        <h3>贴心设置</h3>
+        <label for="specialNumbers">贴心学号（多个学号用英文逗号隔开）</label>
+        <input type="text" id="specialNumbers" placeholder="请输入贴心学号" />
+
+        <p>说明：在贴心设置中增加的学号有更大的几率会被抽中！</p>
+
+        <button id="saveSettings">保存设置</button>
+    </div>
+
+    <script>
+        // 从localStorage中获取最小值和最大值，如果没有则使用默认值
+        let minValue = localStorage.getItem('minValue') ? parseInt(localStorage.getItem('minValue')) : 1;
+        let maxValue = localStorage.getItem('maxValue') ? parseInt(localStorage.getItem('maxValue')) : 20;
+        let specialNumbers = JSON.parse(localStorage.getItem('specialNumbers')) || []; // 贴心学号
+
+        // 更新页面显示的最小值和最大值
+        document.getElementById('minValue').value = minValue;
+        document.getElementById('maxValue').value = maxValue;
+        document.getElementById('specialNumbers').value = specialNumbers.join(',');
+
+        const numberDisplay = document.getElementById('numberDisplay');
+        const startButton = document.getElementById('startButton');
+        const settingsBtn = document.getElementById('settingsBtn');
+        const settingsPopup = document.getElementById('settingsPopup');
+        const saveSettingsButton = document.getElementById('saveSettings');
+        const minValueInput = document.getElementById('minValue');
+        const maxValueInput = document.getElementById('maxValue');
+        const specialNumbersInput = document.getElementById('specialNumbers');
+
+        startButton.addEventListener('click', () => {
+            // 显示“抽取中”
+            numberDisplay.textContent = "抽取中";
+
+            // 设置2秒的间隔，2秒后显示抽取的数字
+            setTimeout(() => {
+                let randomNumber;
+                const isSpecial = Math.random() < 0.4; // 40%的概率选择特殊学号
+                if (isSpecial && specialNumbers.length > 0) {
+                    randomNumber = specialNumbers[Math.floor(Math.random() * specialNumbers.length)];
+                } else {
+                    randomNumber = Math.floor(Math.random() * (maxValue - minValue + 1)) + minValue;
+                }
+                numberDisplay.textContent = randomNumber;
+            }, 2000);
+        });
+
+        settingsBtn.addEventListener('click', () => {
+            settingsPopup.style.display = 'block';
+        });
+
+        saveSettingsButton.addEventListener('click', () => {
+            minValue = parseInt(minValueInput.value);
+            maxValue = parseInt(maxValueInput.value);
+            specialNumbers = specialNumbersInput.value.split(',').map(num => num.trim()).filter(num => num.length > 0);
+
+            if (minValue > maxValue) {
+                alert('最小值不能大于最大值');
+                return;
+            }
+
+            // 保存设置到localStorage
+            localStorage.setItem('minValue', minValue);
+            localStorage.setItem('maxValue', maxValue);
+            localStorage.setItem('specialNumbers', JSON.stringify(specialNumbers));
+
+            settingsPopup.style.display = 'none';
+        });
+
+        window.addEventListener('click', (e) => {
+            if (e.target === settingsPopup) {
+                settingsPopup.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
