@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZZY专用序号抽取系统</title>
+    <title>ZZY专用转盘</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -107,6 +107,16 @@
             color: #333;
         }
 
+        .editable {
+            display: inline-block;
+            cursor: pointer;
+        }
+
+        .edit-icon {
+            margin-left: 10px;
+            cursor: pointer;
+        }
+
         /* Responsive for mobile */
         @media (max-width: 768px) {
             .number-display {
@@ -133,9 +143,12 @@
     </style>
 </head>
 <body>
-    <div class="version-info" id="versionInfo">版本号: 1.0.0   詹珍怡&copy;版权所有 2024</div>
-    <h1>ZZY专用序号抽取系统</h1>
-    <div class="number-display" id="numberDisplay">0</div>
+    <div class="version-info" id="versionInfo">版本号: 1.1.0   台州王浩哥集团有限公司&copy;版权所有 2024</div>
+    <h1>
+        <span id="editableText" class="editable">ZZY专用转盘</span>
+        <span id="editIcon" class="edit-icon">✏️</span>
+    </h1>
+    <div class="number-display" id="numberDisplay">开始抽👇</div>
     <button class="button" id="startButton">开始抽取</button>
 
     <button class="settings-btn" id="settingsBtn">设置</button>
@@ -179,7 +192,7 @@
 
         startButton.addEventListener('click', () => {
             // 显示“抽取中”
-            numberDisplay.textContent = "抽取中";
+            numberDisplay.textContent = "抽取中...";
 
             // 设置2秒的间隔，2秒后显示抽取的数字
             setTimeout(() => {
@@ -220,6 +233,25 @@
             if (e.target === settingsPopup) {
                 settingsPopup.style.display = 'none';
             }
+        });
+
+        document.addEventListener('DOMContentLoaded', (event) => {
+            const editableText = document.getElementById('editableText');
+            const editIcon = document.getElementById('editIcon');
+
+            // Load saved text from local storage
+            const savedText = localStorage.getItem('editableText');
+            if (savedText) {
+                editableText.textContent = savedText;
+            }
+
+            editIcon.addEventListener('click', () => {
+                const newText = prompt('请输入新的文本:', editableText.textContent);
+                if (newText !== null) {
+                    editableText.textContent = newText;
+                    localStorage.setItem('editableText', newText);
+                }
+            });
         });
     </script>
 </body>
