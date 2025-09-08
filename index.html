@@ -1,412 +1,119 @@
 <!DOCTYPE html>
-<html lang="zh-cn">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>rh204随机点名器</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Google Fonts for better typography -->
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;800&display=swap" rel="stylesheet">
+    <title>学号随机点名系统</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="weui-master/dist/style/weui.min.css">
     <style>
-        :root {
-            --main-bg: linear-gradient(135deg, #b7ffb2 0%, #6ee7b7 100%);
-            --glass-bg: rgba(255,255,255,0.22);
-            --glass-border: rgba(180,255,200,0.35);
-            --main-shadow: 0 8px 32px 0 rgba(80, 200, 120, 0.18);
-            --accent: #4ade80;
-            --accent-hover: #34d399;
-            --text-main: #1b3a2b;
-            --text-sub: #1b3a2bcc;
-            --result-glow: #eaffea;
-        }
-        body {
-            min-height: 100vh;
-            margin: 0;
-            background: var(--main-bg);
-            font-family: 'Montserrat', 'Segoe UI', Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.5s;
-            overflow: hidden;
-        }
-        .glass-card {
-            background: var(--glass-bg);
-            border-radius: 24px;
-            box-shadow: var(--main-shadow);
-            border: 1.5px solid var(--glass-border);
-            padding: 40px 32px 32px 32px;
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-width: 350px;
-            max-width: 96vw;
-        }
-        h1 {
-            color: var(--text-main);
-            margin-bottom: 18px;
-            font-size: 2.6rem;
-            font-weight: 800;
-            letter-spacing: 2px;
-            text-shadow: 0 4px 24px #b7ffb244;
-            user-select: none;
-        }
-        .tip {
-            color: var(--text-sub);
-            font-size: 15px;
-            margin-bottom: 12px;
-            letter-spacing: 1px;
-            text-align: center;
-        }
-        .controls {
-            margin-bottom: 18px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 18px;
-            align-items: center;
-            justify-content: center;
-        }
-        .controls label {
-            color: var(--text-main);
-            font-size: 15px;
-            font-weight: 600;
-            letter-spacing: 1px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        #duration {
-            width: 60px;
-            border-radius: 8px;
-            border: 1px solid #b7ffb277;
-            padding: 4px 8px;
-            font-size: 15px;
-            background: rgba(255,255,255,0.18);
-            color: #1b3a2b;
-            outline: none;
-            transition: border 0.2s;
-        }
-        #duration:focus {
-            border: 1.5px solid var(--accent);
-        }
-        #hide-list {
-            accent-color: var(--accent);
-        }
-        #night-mode {
-            accent-color: #1b3a2b;
-        }
-        #name-list {
-            width: 350px;
-            min-height: 120px;
-            padding: 14px;
-            border-radius: 14px;
-            border: none;
-            font-size: 16px;
-            margin-bottom: 22px;
-            box-shadow: 0 2px 12px #b7ffb244;
-            background: rgba(255,255,255,0.32);
-            color: #1b3a2b;
-            resize: vertical;
-            transition: background 0.3s, color 0.3s;
-        }
-        #name-list:focus {
-            outline: 2px solid var(--accent);
-        }
-        #draw-btn {
-            padding: 14px 38px;
-            font-size: 22px;
-            border: none;
-            border-radius: 30px;
-            background: linear-gradient(90deg, var(--accent), #6ee7b7 90%);
-            color: #fff;
-            cursor: pointer;
-            font-weight: 800;
-            letter-spacing: 2px;
-            box-shadow: 0 4px 18px #4ade8044;
-            margin-bottom: 10px;
-            transition: background 0.2s, transform 0.1s;
-            position: relative;
-            overflow: hidden;
-        }
-        #draw-btn:hover {
-            background: linear-gradient(90deg, var(--accent-hover), #bbf7d0 90%);
-            transform: scale(1.04);
-        }
-        #draw-btn:active {
-            transform: scale(0.98);
-        }
-        #result {
-            margin-top: 38px;
-            font-size: 2.7rem;
-            color: var(--text-main);
-            font-weight: 900;
-            letter-spacing: 3px;
-            min-height: 60px;
-            text-shadow: 0 0 32px var(--result-glow), 2px 2px 12px #b7ffb244;
-            transition: 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 70px;
-            user-select: none;
-        }
-        .fade {
-            animation: fadeIn 0.7s cubic-bezier(.4,2,.6,1);
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: scale(0.7) rotate(-8deg);}
-            to { opacity: 1; transform: scale(1) rotate(0);}
-        }
-        .winner-anim {
-            animation: winnerPop 1.1s cubic-bezier(.4,2,.6,1);
-        }
-        @keyframes winnerPop {
-            0% { opacity: 0; transform: scale(0.7) rotate(-8deg);}
-            60% { opacity: 1; transform: scale(1.15) rotate(2deg);}
-            80% { transform: scale(0.95) rotate(-2deg);}
-            100% { opacity: 1; transform: scale(1) rotate(0);}
-        }
-        .confetti {
-            pointer-events: none;
-            position: fixed;
-            left: 0; top: 0; width: 100vw; height: 100vh;
-            z-index: 999;
-        }
-        /* 夜间模式 */
-        body.night {
-            --main-bg: linear-gradient(135deg, #1e2f23 0%, #3a5a40 100%);
-            --glass-bg: rgba(40,60,50,0.32);
-            --glass-border: rgba(180,255,200,0.12);
-            --main-shadow: 0 8px 32px 0 rgba(0,0,0,0.38);
-            --accent: #4ade80;
-            --accent-hover: #34d399;
-            --text-main: #eaffea;
-            --text-sub: #eaffea99;
-            --result-glow: #4ade80;
-        }
-        body.night #name-list {
-            background: rgba(40,60,50,0.22);
-            color: #eaffea;
-        }
-        @media (max-width: 480px) {
-            .glass-card, #name-list { min-width: 0; width: 98vw; }
-            .glass-card { padding: 18px 4vw 18px 4vw;}
-            #result { font-size: 1.7rem; }
-        }
+        /* 轻量兜底，主样式在 assets/css/style.css */
+        .hidden { display: none; }
     </style>
+    <script defer src="assets/js/app.js"></script>
+    <script>
+        // 简单防抖，避免 iOS PWA 双击放大
+        document.addEventListener('gesturestart', function (e) { e.preventDefault(); });
+    </script>
+    <link rel="icon" href="weui-master/dist/example/images/logo.png">
+    <meta name="theme-color" content="#12b76a">
 </head>
 <body>
-    <div class="glass-card">
-        <h1>🎲 随机点名器</h1>
-        <div class="tip">每行一个名字，可自行增减</div>
-        <div class="controls">
-            <label>
-                抽取时间(s):
-                <input type="number" id="duration" min="0.5" max="10" step="0.1" value="1.5">
-            </label>
-            <label>
-                <input type="checkbox" id="hide-list">
-                隐藏名单框
-            </label>
-            <label>
-                <input type="checkbox" id="night-mode">
-                夜间模式
-            </label>
-        </div>
-        <textarea id="name-list" rows="8">蔡镇汉
-陈柏珲
-陈仲昂
-胡海潮
-黄承旭
-李思瑶
-粟培林
-田家奥
-王浩阳
-王梓铭
-许熊韵
-叶佳
-余鑫杰
-张航
-张静
-张睿芷
-张栩睿
-张喆
-张正宁
-郑诺诺
-陈嘉诚
-杨怡萱
-赖哲丞</textarea>
-        <button id="draw-btn">✨ 随机抽取</button>
-        <div id="result"></div>
-        <canvas class="confetti" id="confetti-canvas"></canvas>
+    <div class="app">
+        <header class="app__header">
+            <div class="app__brand">
+                <span class="brand__logo">🎯</span>
+                <h1 class="brand__title">学号随机点名</h1>
+            </div>
+            <button id="btnOpenSettings" class="weui-btn weui-btn_default app__settings-btn" aria-label="打开设置">设置</button>
+        </header>
+
+        <main class="app__main">
+            <section class="card card--panel">
+                <div class="range-grid">
+                    <div class="range-item">
+                        <label for="inputMin" class="weui-label">最小学号</label>
+                        <input id="inputMin" type="number" class="weui-input" placeholder="如 1" min="-999999">
+                    </div>
+                    <div class="range-item">
+                        <label for="inputMax" class="weui-label">最大学号</label>
+                        <input id="inputMax" type="number" class="weui-input" placeholder="如 50" min="-999999">
+                    </div>
+                    <div class="range-item">
+                        <label for="inputExclude" class="weui-label">排除学号（逗号分隔）</label>
+                        <input id="inputExclude" type="text" class="weui-input" placeholder="如 4, 13, 37">
+                    </div>
+                </div>
+
+                
+
+                <div class="display">
+                    <div class="display__label">当前学号</div>
+                    <div id="displayNumber" class="display__number">—</div>
+                    <div id="displayName" class="display__name hidden">—</div>
+                </div>
+
+                <div class="controls controls--bottom">
+                    <div class="controls__primary">
+                        <button class="weui-btn weui-btn_primary btn-ripple js-ripple js-start">开始滚动</button>
+                        <button class="weui-btn weui-btn_warn btn-ripple js-ripple js-stop hidden">停止并点名</button>
+                    </div>
+                    <button id="btnAuto5s" class="weui-btn weui-btn_default btn-ripple js-ripple">5秒随机抽人</button>
+                </div>
+            </section>
+
+            
+        </main>
+
+        <footer class="app__footer">
+            <button id="btnToggleTheme" class="weui-btn weui-btn_default weui-btn_mini btn-ripple js-ripple">切换主题</button>
+            <div class="app__meta">
+                <span>基于 Cursor AI 技术(HTML5+CSS3+JavaScript)</span>
+                <span class="dot">·</span>
+                <span>浏览器：<span id="browserInfo">-</span></span>
+                <span class="dot">·</span>
+                <span>版本：<span id="appVersion">v3.0.0</span></span>
+                <span class="dot">·</span>
+                <span id="copyright">台州王浩哥集团有限公司 © 2025</span>
+            </div>
+        </footer>
     </div>
-    <footer style="margin-top:30px;text-align:center;color:#fff9;font-size:14px;letter-spacing:1px;z-index:10;">
-        Develop By 台州王浩哥集团有限公司  |  
-        <span id="browser-version"></span>  | 基于GitHub Copilot AI | 版本2.0.0
-    </footer>
-    <script>
-        // 本地存储key
-        const NAME_LIST_KEY = 'dm_name_list';
-        const DURATION_KEY = 'dm_duration';
-        const NIGHT_KEY = 'dm_night';
 
-        const btn = document.getElementById('draw-btn');
-        const textarea = document.getElementById('name-list');
-        const result = document.getElementById('result');
-        const durationInput = document.getElementById('duration');
-        const hideList = document.getElementById('hide-list');
-        const nightMode = document.getElementById('night-mode');
-        const confettiCanvas = document.getElementById('confetti-canvas');
+    <!-- 设置弹窗 -->
+    <div id="settingsSheet" class="weui-mask hidden" role="dialog" aria-modal="true">
+        <div class="sheet">
+            <div class="sheet__header">高级设置</div>
+            <div class="sheet__content">
+                <label class="weui-cell weui-cell_switch">
+                    <div class="weui-cell__bd">不重复点到（抽过不再出现）</div>
+                    <div class="weui-cell__ft">
+                        <input id="switchNoRepeat" class="weui-switch" type="checkbox" checked>
+                    </div>
+                </label>
+                <label class="weui-cell weui-cell_switch">
+                    <div class="weui-cell__bd">滚动动画（更有仪式感）</div>
+                    <div class="weui-cell__ft">
+                        <input id="switchAnimate" class="weui-switch" type="checkbox" checked>
+                    </div>
+                </label>
 
-        // 加载本地数据
-        window.onload = function() {
-            const savedNames = localStorage.getItem(NAME_LIST_KEY);
-            if (savedNames) textarea.value = savedNames;
-            const savedDuration = localStorage.getItem(DURATION_KEY);
-            if (savedDuration) durationInput.value = savedDuration;
-            const savedNight = localStorage.getItem(NIGHT_KEY);
-            if (savedNight === '1') {
-                document.body.classList.add('night');
-                nightMode.checked = true;
-            }
-        };
+                <div class="weui-cells__title">自定义名单（学号-姓名，一行一个，可选）</div>
+                <div class="weui-cells">
+<div class="weui-cell">
+<div class="weui-cell__bd">
+<textarea id="textareaRoster" class="weui-textarea" placeholder="例如：\n1 张三\n2 李四\n3 王五" rows="6"></textarea>
+</div>
+</div>
+                </div>
+            </div>
+            <div class="sheet__footer">
+                <button id="btnSettingsCancel" class="weui-btn weui-btn_default">取消</button>
+                <button id="btnSettingsSave" class="weui-btn weui-btn_primary">保存</button>
+            </div>
+        </div>
+    </div>
 
-        // 名单变动保存
-        textarea.addEventListener('input', () => {
-            localStorage.setItem(NAME_LIST_KEY, textarea.value);
-        });
-
-        // 时间变动保存
-        durationInput.addEventListener('input', () => {
-            localStorage.setItem(DURATION_KEY, durationInput.value);
-        });
-
-        // 隐藏名单框
-        hideList.addEventListener('change', () => {
-            textarea.style.display = hideList.checked ? 'none' : '';
-        });
-
-        // 夜间模式切换
-        nightMode.addEventListener('change', () => {
-            if (nightMode.checked) {
-                document.body.classList.add('night');
-                localStorage.setItem(NIGHT_KEY, '1');
-            } else {
-                document.body.classList.remove('night');
-                localStorage.setItem(NIGHT_KEY, '0');
-            }
-        });
-
-        // 抽奖动画与结果
-        btn.onclick = function() {
-            let names = textarea.value
-                .split('\n')
-                .map(n => n.trim())
-                .filter(n => n.length > 0);
-            if (names.length === 0) {
-                result.textContent = '名单为空！';
-                result.className = '';
-                return;
-            }
-            let duration = parseFloat(durationInput.value) || 1.5;
-            let times = Math.floor(duration * 1000 / 60);
-            let i = 0;
-            let lastName = '';
-            result.className = '';
-            let interval = setInterval(() => {
-                let randomName = names[Math.floor(Math.random() * names.length)];
-                result.textContent = randomName;
-                result.className = 'fade';
-                lastName = randomName;
-                i++;
-                if (i >= times) {
-                    clearInterval(interval);
-                    setTimeout(() => {
-                        result.textContent = lastName;
-                        result.className = 'winner-anim';
-                        showConfetti();
-                    }, 80);
-                }
-            }, 60);
-        };
-
-        // 彩带动画
-        function showConfetti() {
-            const ctx = confettiCanvas.getContext('2d');
-            confettiCanvas.width = window.innerWidth;
-            confettiCanvas.height = window.innerHeight;
-            let confetti = [];
-            for (let i = 0; i < 60; i++) {
-                confetti.push({
-                    x: Math.random() * confettiCanvas.width,
-                    y: Math.random() * -confettiCanvas.height,
-                    r: 6 + Math.random() * 10,
-                    d: 8 + Math.random() * 12,
-                    color: `hsl(${Math.random()*360},90%,60%)`,
-                    tilt: Math.random() * 10 - 5,
-                    tiltAngle: 0,
-                    tiltAngleInc: (Math.random() * 0.07) + 0.05
-                });
-            }
-            let angle = 0;
-            let frame = 0;
-            function draw() {
-                ctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
-                for (let i = 0; i < confetti.length; i++) {
-                    let c = confetti[i];
-                    ctx.beginPath();
-                    ctx.ellipse(c.x, c.y, c.r, c.d, c.tilt, 0, 2 * Math.PI);
-                    ctx.fillStyle = c.color;
-                    ctx.fill();
-                }
-                update();
-            }
-            function update() {
-                angle += 0.01;
-                for (let i = 0; i < confetti.length; i++) {
-                    let c = confetti[i];
-                    c.y += (Math.cos(angle + c.r) + 2 + c.d / 10) * 0.9;
-                    c.x += Math.sin(angle) * 2;
-                    c.tiltAngle += c.tiltAngleInc;
-                    c.tilt = Math.sin(c.tiltAngle) * 12;
-                    if (c.y > confettiCanvas.height + 20) {
-                        c.x = Math.random() * confettiCanvas.width;
-                        c.y = -20;
-                    }
-                }
-            }
-            function animate() {
-                draw();
-                frame++;
-                if (frame < 70) {
-                    requestAnimationFrame(animate);
-                } else {
-                    ctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
-                }
-            }
-            animate();
-        }
-        window.addEventListener('resize', () => {
-            confettiCanvas.width = window.innerWidth;
-            confettiCanvas.height = window.innerHeight;
-        });
-
-        // 显示浏览器内核及版本
-        function getBrowserVersion() {
-            const ua = navigator.userAgent;
-            let match = ua.match(/Chrom(?:e|ium)\/([\d.]+)/i);
-            if (match) return 'Chromium ' + match[1].split('.')[0];
-            match = ua.match(/Firefox\/([\d.]+)/i);
-            if (match) return 'Firefox ' + match[1].split('.')[0];
-            match = ua.match(/Edg\/([\d.]+)/i);
-            if (match) return 'Edge ' + match[1].split('.')[0];
-            match = ua.match(/Safari\/([\d.]+)/i);
-            if (match && !/Chrom/.test(ua)) return 'Safari';
-            return 'Unknown';
-        }
-        document.getElementById('browser-version').textContent = getBrowserVersion();
-    </script>
 </body>
 </html>
+
