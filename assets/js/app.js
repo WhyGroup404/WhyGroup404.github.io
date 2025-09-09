@@ -14,6 +14,7 @@
 	const btnReset = document.getElementById('btnReset');
 	const displayNumber = document.getElementById('displayNumber');
 	const displayName = document.getElementById('displayName');
+	const displayCountdown = document.getElementById('displayCountdown');
 	const historyList = document.getElementById('historyList');
 	const btnClearHistory = document.getElementById('btnClearHistory');
 	const btnUndo = document.getElementById('btnUndo');
@@ -26,6 +27,11 @@
 	const textareaRoster = document.getElementById('textareaRoster');
 	const btnToggleTheme = document.getElementById('btnToggleTheme');
 	const btnAuto5s = document.getElementById('btnAuto5s');
+	// 新增设置控件
+	const switchShowRangeBar = document.getElementById('switchShowRangeBar');
+	const rangeBar = document.getElementById('rangeBar');
+	const inputAutoSeconds = document.getElementById('inputAutoSeconds');
+	const autoSecondsPreview = document.getElementById('autoSecondsPreview');
 
 	/** 状态 **/
 	const STORAGE_KEY = 'rollcall:v1';
@@ -34,6 +40,7 @@
 	let pickedStack = []; // 历史栈（用于撤销）
 	let pickedSet = new Set(); // 已抽到（用于不重复）
 	let rosterMap = new Map(); // 学号 -> 姓名
+	let autoSeconds = 5; // 自动抽人时长（秒）
 
 	/** 工具函数 **/
 	const clampRange = (min, max) => {
@@ -107,6 +114,8 @@
 			picked: Array.from(pickedSet),
 			history: pickedStack,
 			themeDark: document.documentElement.classList.contains('theme-dark'),
+			showRangeBar: switchShowRangeBar ? switchShowRangeBar.checked : true,
+			autoSeconds: inputAutoSeconds ? Number(inputAutoSeconds.value) : autoSeconds,
 		};
 		localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 	};
@@ -124,19 +133,48 @@
 			if (typeof s.roster === 'string') textareaRoster.value = s.roster;
 			pickedSet = new Set(Array.isArray(s.picked) ? s.picked : []);
 			pickedStack = Array.isArray(s.history) ? s.history : [];
-			if (s.themeDark) document.documentElement.classList.add('theme-dark');
+			if (s.themeDark) {
+				document.documentElement.classList.add('theme-dark');
+				document.body?.setAttribute('data-weui-theme', 'dark');
+			} else {
+				document.body?.setAttribute('data-weui-theme', 'light');
+			}
+
+			// 新增设置：顶部范围栏显示与自动秒数
+			if (switchShowRangeBar && typeof s.showRangeBar === 'boolean') {
+				switchShowRangeBar.checked = s.showRangeBar;
+			}
+			if (typeof s.autoSeconds === 'number' && s.autoSeconds >= 1 && s.autoSeconds <= 10) {
+				autoSeconds = Math.floor(s.autoSeconds);
+				if (inputAutoSeconds) inputAutoSeconds.value = String(autoSeconds);
+			}
 		} catch (e) {
 			console.warn('load state failed', e);
 		}
 	};
 
+	const applyRangeBarVisible = () => {
+		if (!rangeBar || !switchShowRangeBar) return;
+		rangeBar.classList.toggle('hidden', !switchShowRangeBar.checked);
+	};
+
+	const updateAutoSecondsUI = () => {
+		autoSeconds = inputAutoSeconds ? Math.min(10, Math.max(1, Number(inputAutoSeconds.value) || 5)) : autoSeconds;
+		if (autoSecondsPreview) autoSecondsPreview.textContent = String(autoSeconds);
+		if (btnAuto5s) btnAuto5s.textContent = `${autoSeconds}秒随机抽人`;
+	};
+
 	const openSettings = () => {
 		settingsSheet.classList.remove('hidden');
+		// 触发动画
+		requestAnimationFrame(() => settingsSheet.classList.add('is-open'));
 		document.body.style.overflow = 'hidden';
 	};
 
 	const closeSettings = () => {
-		settingsSheet.classList.add('hidden');
+		settingsSheet.classList.remove('is-open');
+		// 等待动画结束后再隐藏
+		setTimeout(() => settingsSheet.classList.add('hidden'), 280);
 		document.body.style.overflow = '';
 	};
 
@@ -235,7 +273,8 @@
 	};
 
 	const toggleTheme = () => {
-		document.documentElement.classList.toggle('theme-dark');
+		const isDark = document.documentElement.classList.toggle('theme-dark');
+		document.body?.setAttribute('data-weui-theme', isDark ? 'dark' : 'light');
 		saveState();
 	};
 
@@ -283,19 +322,54 @@
 	});
 	btnToggleTheme?.addEventListener('click', toggleTheme);
 
-	// 5秒随机抽人
+	// 自动抽人（可配置 1-10 秒）
 	btnAuto5s?.addEventListener('click', () => {
 		if (isRolling) return;
 		startRoll();
-		setTimeout(() => {
-			stopRoll();
-		}, 5000);
+		const durationMs = (autoSeconds || 5) * 1000;
+		const startTs = performance.now();
+		if (displayCountdown) {
+			displayCountdown.classList.remove('hidden');
+			// 隐藏学号与姓名，避免重叠
+			if (displayNumber) displayNumber.style.visibility = 'hidden';
+			if (displayName) displayName.style.visibility = 'hidden';
+		}
+		const tick = () => {
+			const now = performance.now();
+			let remain = Math.max(0, durationMs - (now - startTs));
+			// 格式：秒.毫秒（3位）
+			const s = Math.floor(remain / 1000);
+			const ms = Math.floor(remain % 1000);
+			if (displayCountdown) displayCountdown.textContent = `${s}.${String(ms).padStart(3,'0')}`;
+			if (remain > 0) {
+				requestAnimationFrame(tick);
+			} else {
+				if (displayCountdown) displayCountdown.classList.add('hidden');
+				if (displayNumber) displayNumber.style.visibility = '';
+				if (displayName) displayName.style.visibility = '';
+				stopRoll();
+			}
+		};
+		requestAnimationFrame(tick);
 	});
 
-	[inputMin, inputMax, inputExclude, switchNoRepeat, switchAnimate].forEach((el) => {
+	[inputMin, inputMax, inputExclude, switchNoRepeat, switchAnimate, switchShowRangeBar, inputAutoSeconds].forEach((el) => {
 		el?.addEventListener('change', () => {
 			saveState();
 		});
+	});
+
+	// 新增：实时更新可见性与预览
+	switchShowRangeBar?.addEventListener('change', () => {
+		applyRangeBarVisible();
+	});
+	inputAutoSeconds?.addEventListener('input', () => {
+		updateAutoSecondsUI();
+		// 更新背景进度条百分比
+		if (inputAutoSeconds) {
+			const p = (Number(inputAutoSeconds.value) - 1) / 9 * 100;
+			inputAutoSeconds.style.setProperty('--_val', p + '%');
+		}
 	});
 
 	textareaRoster?.addEventListener('input', () => {
@@ -310,6 +384,14 @@
 	const last = pickedStack[pickedStack.length - 1];
 	updateDisplay(last ? last.number : null);
 	setFooterInfo();
+	// 应用新增设置的初始状态
+	applyRangeBarVisible();
+	updateAutoSecondsUI();
+	// 初始化滑条背景
+	if (inputAutoSeconds) {
+		const p = (Number(inputAutoSeconds.value) - 1) / 9 * 100;
+		inputAutoSeconds.style.setProperty('--_val', p + '%');
+	}
 })();
 
 // 简易彩带实现（无第三方库）

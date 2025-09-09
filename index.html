@@ -19,7 +19,7 @@
     <link rel="icon" href="weui-master/dist/example/images/logo.png">
     <meta name="theme-color" content="#12b76a">
 </head>
-<body>
+<body data-weui-theme="light">
     <div class="app">
         <header class="app__header">
             <div class="app__brand">
@@ -31,7 +31,7 @@
 
         <main class="app__main">
             <section class="card card--panel">
-                <div class="range-grid">
+                <div id="rangeBar" class="range-grid">
                     <div class="range-item">
                         <label for="inputMin" class="weui-label">最小学号</label>
                         <input id="inputMin" type="number" class="weui-input" placeholder="如 1" min="-999999">
@@ -52,6 +52,7 @@
                     <div class="display__label">当前学号</div>
                     <div id="displayNumber" class="display__number">—</div>
                     <div id="displayName" class="display__name hidden">—</div>
+                    <div id="displayCountdown" class="display__countdown hidden">—</div>
                 </div>
 
                 <div class="controls controls--bottom">
@@ -73,9 +74,11 @@
                 <span class="dot">·</span>
                 <span>浏览器：<span id="browserInfo">-</span></span>
                 <span class="dot">·</span>
-                <span>版本：<span id="appVersion">v3.0.0</span></span>
+                <span>版本：v3.0.1(本次更新:优化网页UI和功能)</span>
                 <span class="dot">·</span>
-                <span id="copyright">台州王浩哥集团有限公司 © 2025</span>
+                <span>台州王浩哥集团有限公司 © 2025</span>
+                <span class="dot">·</span>
+                <span>赠送:詹珍怡及其所有朋友(请认准:zhanzhenyi.cn)</span>
             </div>
         </footer>
     </div>
@@ -97,6 +100,21 @@
                         <input id="switchAnimate" class="weui-switch" type="checkbox" checked>
                     </div>
                 </label>
+
+                <label class="weui-cell weui-cell_switch">
+                    <div class="weui-cell__bd">显示顶部范围/排除输入栏</div>
+                    <div class="weui-cell__ft">
+                        <input id="switchShowRangeBar" class="weui-switch" type="checkbox" checked>
+                    </div>
+                </label>
+
+                <div class="weui-cell">
+                    <div class="weui-cell__bd">
+                        <label for="inputAutoSeconds" class="weui-label">自动抽人时长（1-10 秒）</label>
+                        <input id="inputAutoSeconds" type="range" min="1" max="10" value="5" style="width:100%">
+                        <div style="margin-top:6px;color:#5b776f;">当前：<span id="autoSecondsPreview">5</span> 秒</div>
+                    </div>
+                </div>
 
                 <div class="weui-cells__title">自定义名单（学号-姓名，一行一个，可选）</div>
                 <div class="weui-cells">
