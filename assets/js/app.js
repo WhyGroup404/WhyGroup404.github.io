@@ -15,6 +15,8 @@
 	const displayNumber = document.getElementById('displayNumber');
 	const displayName = document.getElementById('displayName');
 	const displayCountdown = document.getElementById('displayCountdown');
+	const displayLabel = document.getElementById('displayLabel');
+	const displayBox = document.querySelector('.display');
 	const historyList = document.getElementById('historyList');
 	const btnClearHistory = document.getElementById('btnClearHistory');
 	const btnUndo = document.getElementById('btnUndo');
@@ -22,25 +24,67 @@
 	const settingsSheet = document.getElementById('settingsSheet');
 	const btnSettingsCancel = document.getElementById('btnSettingsCancel');
 	const btnSettingsSave = document.getElementById('btnSettingsSave');
+	const btnSettingsClose = document.getElementById('btnSettingsClose');
+	const btnClearPicked = document.getElementById('btnClearPicked');
 	const switchNoRepeat = document.getElementById('switchNoRepeat');
 	const switchAnimate = document.getElementById('switchAnimate');
 	const textareaRoster = document.getElementById('textareaRoster');
 	const btnToggleTheme = document.getElementById('btnToggleTheme');
 	const btnAuto5s = document.getElementById('btnAuto5s');
+	const btnWhatsNew = document.getElementById('btnWhatsNew');
+	const whatsNewSheet = document.getElementById('whatsNewSheet');
+	const btnWhatsNewClose = document.getElementById('btnWhatsNewClose');
+	const btnWhatsNewOk = document.getElementById('btnWhatsNewOk');
 	// 新增设置控件
 	const switchShowRangeBar = document.getElementById('switchShowRangeBar');
 	const rangeBar = document.getElementById('rangeBar');
 	const inputAutoSeconds = document.getElementById('inputAutoSeconds');
 	const autoSecondsPreview = document.getElementById('autoSecondsPreview');
+	const selectNoRepeatExpire = document.getElementById('selectNoRepeatExpire');
 
 	/** 状态 **/
 	const STORAGE_KEY = 'rollcall:v1';
+	const STORAGE_META_KEY = 'rollcall:v1:meta';
 	let timerId = null;
 	let isRolling = false;
 	let pickedStack = []; // 历史栈（用于撤销）
 	let pickedSet = new Set(); // 已抽到（用于不重复）
 	let rosterMap = new Map(); // 学号 -> 姓名
 	let autoSeconds = 5; // 自动抽人时长（秒）
+	let noRepeatExpire = 'session'; // session | 40m | 1d
+	let prevLabelText = '当前学号';
+	let countdownActive = false;
+	let countdownRAF = 0;
+
+	/** 自适应字号：根据容器可用空间自适应显示学号 **/
+	const isCountdownVisible = () => !!displayCountdown && !displayCountdown.classList.contains('hidden');
+	const fitDisplayNumber = () => {
+		if (!displayNumber || !displayBox || isCountdownVisible()) return;
+		// 计算可用宽高（预留一点内边距与标题/姓名空间）
+		const containerWidth = Math.max(0, displayBox.clientWidth - 24);
+		let containerHeight = displayBox.clientHeight;
+		const labelH = displayLabel ? displayLabel.offsetHeight : 0;
+		const nameVisible = displayName && !displayName.classList.contains('hidden') && displayName.textContent !== '—';
+		const nameH = nameVisible ? displayName.offsetHeight : 0;
+		// 预留顶部/底部内边距与阴影空间
+		containerHeight = Math.max(0, containerHeight - labelH - nameH - 36);
+
+		if (containerWidth <= 0 || containerHeight <= 0) return;
+
+		const maxPx = 1400; // 上限保护
+		const minPx = 48; // 下限保护
+		let lo = minPx, hi = maxPx;
+		// 先重置为中间值以减少跳动影响测量
+		displayNumber.style.fontSize = '';
+		// 二分查找最大的可用字号
+		while (lo < hi) {
+			const mid = Math.floor((lo + hi + 1) / 2);
+			displayNumber.style.fontSize = mid + 'px';
+			const fits = displayNumber.scrollWidth <= containerWidth && displayNumber.scrollHeight <= containerHeight;
+			if (fits) lo = mid; else hi = mid - 1;
+		}
+		displayNumber.style.fontSize = lo + 'px';
+	};
 
 	/** 工具函数 **/
 	const clampRange = (min, max) => {
@@ -92,15 +136,20 @@
 	const renderHistory = () => {};
 
 	const updateDisplay = (n) => {
+		// 为减少测量抖动，姓名先隐藏（CSS 仍保留空间）
+		displayName?.classList.add('hidden');
 		displayNumber.textContent = n != null ? String(n) : '—';
 		const name = n != null ? rosterMap.get(n) : '';
 		if (name) {
 			displayName.textContent = name;
-			displayName.classList.remove('hidden');
+			// 不在滚动时再显示，滚动中由 CSS 隐藏
+			if (!isRolling) displayName.classList.remove('hidden');
 		} else {
 			displayName.textContent = '—';
 			displayName.classList.add('hidden');
 		}
+		// 滚动中不触发自适应，避免频繁重排；停止时会调用。
+		if (!isRolling) requestAnimationFrame(fitDisplayNumber);
 	};
 
 	const saveState = () => {
@@ -111,13 +160,19 @@
 			noRepeat: switchNoRepeat.checked,
 			animate: switchAnimate.checked,
 			roster: textareaRoster.value,
-			picked: Array.from(pickedSet),
+			picked: noRepeatExpire === 'session' ? [] : Array.from(pickedSet),
 			history: pickedStack,
 			themeDark: document.documentElement.classList.contains('theme-dark'),
 			showRangeBar: switchShowRangeBar ? switchShowRangeBar.checked : true,
 			autoSeconds: inputAutoSeconds ? Number(inputAutoSeconds.value) : autoSeconds,
 		};
 		localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+		// 保存元信息：不重复过期策略与时间戳
+		const meta = {
+			noRepeatExpire,
+			pickedSavedAt: Date.now(),
+		};
+		localStorage.setItem(STORAGE_META_KEY, JSON.stringify(meta));
 	};
 
 	const loadState = () => {
@@ -131,7 +186,12 @@
 			switchNoRepeat.checked = !!s.noRepeat;
 			switchAnimate.checked = s.animate !== false;
 			if (typeof s.roster === 'string') textareaRoster.value = s.roster;
-			pickedSet = new Set(Array.isArray(s.picked) ? s.picked : []);
+			// session 模式不加载历史 picked
+			pickedSet = new Set(
+				Array.isArray(s.picked) && s.picked.length && (!selectNoRepeatExpire || selectNoRepeatExpire.value !== 'session')
+					? s.picked
+					: []
+			);
 			pickedStack = Array.isArray(s.history) ? s.history : [];
 			if (s.themeDark) {
 				document.documentElement.classList.add('theme-dark');
@@ -148,6 +208,31 @@
 				autoSeconds = Math.floor(s.autoSeconds);
 				if (inputAutoSeconds) inputAutoSeconds.value = String(autoSeconds);
 			}
+
+			// 加载过期策略并检查是否需要清空不重复集合
+			try {
+				const metaRaw = localStorage.getItem(STORAGE_META_KEY);
+				if (metaRaw) {
+					const meta = JSON.parse(metaRaw);
+					if (meta && typeof meta.noRepeatExpire === 'string') {
+						noRepeatExpire = meta.noRepeatExpire;
+						if (selectNoRepeatExpire) selectNoRepeatExpire.value = noRepeatExpire;
+					}
+					const savedAt = Number(meta && meta.pickedSavedAt) || 0;
+					if (savedAt > 0 && typeof meta.noRepeatExpire === 'string') {
+						const now = Date.now();
+						let ttlMs = 0;
+						if (meta.noRepeatExpire === '40m') ttlMs = 40 * 60 * 1000;
+						if (meta.noRepeatExpire === '1d') ttlMs = 24 * 60 * 60 * 1000;
+						if (ttlMs > 0 && now - savedAt > ttlMs) {
+							pickedSet.clear();
+							pickedStack = [];
+							// 保存一次，避免反复清空
+							saveState();
+						}
+					}
+				}
+			} catch (_) {}
 		} catch (e) {
 			console.warn('load state failed', e);
 		}
@@ -175,6 +260,18 @@
 		settingsSheet.classList.remove('is-open');
 		// 等待动画结束后再隐藏
 		setTimeout(() => settingsSheet.classList.add('hidden'), 280);
+		document.body.style.overflow = '';
+	};
+
+	const openWhatsNew = () => {
+		whatsNewSheet.classList.remove('hidden');
+		requestAnimationFrame(() => whatsNewSheet.classList.add('is-open'));
+		document.body.style.overflow = 'hidden';
+	};
+
+	const closeWhatsNew = () => {
+		whatsNewSheet.classList.remove('is-open');
+		setTimeout(() => whatsNewSheet.classList.add('hidden'), 280);
 		document.body.style.overflow = '';
 	};
 
@@ -215,6 +312,17 @@
 		timerId = null;
 		document.querySelector('.app')?.classList.remove('rolling');
 
+		// 如果处于读秒，取消动画帧并恢复界面
+		if (countdownActive) {
+			countdownActive = false;
+			if (countdownRAF) cancelAnimationFrame(countdownRAF);
+			countdownRAF = 0;
+		}
+		if (displayCountdown) displayCountdown.classList.add('hidden');
+		if (displayNumber) displayNumber.style.visibility = '';
+		if (displayName) displayName.style.visibility = '';
+		if (displayLabel) displayLabel.textContent = prevLabelText || '当前学号';
+
 		const [min, max] = clampRange(Number(inputMin.value), Number(inputMax.value));
 		const excludeSet = parseExclude(inputExclude.value);
 		const noRepeat = switchNoRepeat.checked;
@@ -227,6 +335,7 @@
 		displayNumber.classList.remove('pop');
 		void displayNumber.offsetWidth; // 触发重绘
 		displayNumber.classList.add('pop');
+		requestAnimationFrame(fitDisplayNumber);
 
 		// 彩带效果
 		try {
@@ -315,19 +424,41 @@
 	// 历史已移除（保留逻辑以便将来扩展，但不渲染）
 	btnOpenSettings?.addEventListener('click', openSettings);
 	btnSettingsCancel?.addEventListener('click', closeSettings);
+	btnSettingsClose?.addEventListener('click', closeSettings);
 	btnSettingsSave?.addEventListener('click', () => {
 		applyRoster();
 		saveState();
 		closeSettings();
 	});
 	btnToggleTheme?.addEventListener('click', toggleTheme);
+	btnWhatsNew?.addEventListener('click', openWhatsNew);
+	btnWhatsNewClose?.addEventListener('click', closeWhatsNew);
+	btnWhatsNewOk?.addEventListener('click', closeWhatsNew);
+
+	btnClearPicked?.addEventListener('click', () => {
+		pickedSet.clear();
+		pickedStack = [];
+		saveState();
+		renderHistory();
+		const current = Number(displayNumber.textContent);
+		if (Number.isFinite(current)) updateDisplay(current);
+		if (window.weui && typeof window.weui.toast === 'function') {
+			window.weui.toast('已清空', 1500);
+		}
+	});
 
 	// 自动抽人（可配置 1-10 秒）
 	btnAuto5s?.addEventListener('click', () => {
 		if (isRolling) return;
 		startRoll();
+		// 如果未能开始滚动（例如可选学号为空）则直接返回
+		if (!isRolling) return;
+
 		const durationMs = (autoSeconds || 5) * 1000;
 		const startTs = performance.now();
+		countdownActive = true;
+		prevLabelText = displayLabel?.textContent || '当前学号';
+		if (displayLabel) displayLabel.textContent = '读秒';
 		if (displayCountdown) {
 			displayCountdown.classList.remove('hidden');
 			// 隐藏学号与姓名，避免重叠
@@ -335,6 +466,7 @@
 			if (displayName) displayName.style.visibility = 'hidden';
 		}
 		const tick = () => {
+			if (!countdownActive) return; // 被手动终止
 			const now = performance.now();
 			let remain = Math.max(0, durationMs - (now - startTs));
 			// 格式：秒.毫秒（3位）
@@ -342,21 +474,26 @@
 			const ms = Math.floor(remain % 1000);
 			if (displayCountdown) displayCountdown.textContent = `${s}.${String(ms).padStart(3,'0')}`;
 			if (remain > 0) {
-				requestAnimationFrame(tick);
+				countdownRAF = requestAnimationFrame(tick);
 			} else {
-				if (displayCountdown) displayCountdown.classList.add('hidden');
-				if (displayNumber) displayNumber.style.visibility = '';
-				if (displayName) displayName.style.visibility = '';
+				// 结束读秒，统一走 stopRoll 恢复界面并定结果
+				countdownActive = false;
 				stopRoll();
 			}
 		};
-		requestAnimationFrame(tick);
+		countdownRAF = requestAnimationFrame(tick);
 	});
 
 	[inputMin, inputMax, inputExclude, switchNoRepeat, switchAnimate, switchShowRangeBar, inputAutoSeconds].forEach((el) => {
 		el?.addEventListener('change', () => {
 			saveState();
 		});
+	});
+
+	// 不重复过期策略变更
+	selectNoRepeatExpire?.addEventListener('change', () => {
+		noRepeatExpire = selectNoRepeatExpire.value || 'session';
+		saveState();
 	});
 
 	// 新增：实时更新可见性与预览
@@ -375,6 +512,7 @@
 	textareaRoster?.addEventListener('input', () => {
 		// 预览姓名显示
 		applyRoster();
+		requestAnimationFrame(fitDisplayNumber);
 	});
 
 	// 初始化
@@ -391,6 +529,14 @@
 	if (inputAutoSeconds) {
 		const p = (Number(inputAutoSeconds.value) - 1) / 9 * 100;
 		inputAutoSeconds.style.setProperty('--_val', p + '%');
+	}
+	// 监听尺寸变化，保持字号自适应
+	window.addEventListener('resize', () => requestAnimationFrame(fitDisplayNumber));
+	if (window.ResizeObserver && displayBox) {
+		try {
+			const ro = new ResizeObserver(() => requestAnimationFrame(fitDisplayNumber));
+			ro.observe(displayBox);
+		} catch (_) {}
 	}
 })();
 

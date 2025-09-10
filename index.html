@@ -49,7 +49,7 @@
                 
 
                 <div class="display">
-                    <div class="display__label">当前学号</div>
+                    <div id="displayLabel" class="display__label">当前学号</div>
                     <div id="displayNumber" class="display__number">—</div>
                     <div id="displayName" class="display__name hidden">—</div>
                     <div id="displayCountdown" class="display__countdown hidden">—</div>
@@ -68,13 +68,16 @@
         </main>
 
         <footer class="app__footer">
-            <button id="btnToggleTheme" class="weui-btn weui-btn_default weui-btn_mini btn-ripple js-ripple">切换主题</button>
+            <div class="app__actions">
+                <button id="btnToggleTheme" class="weui-btn weui-btn_default weui-btn_mini btn-ripple js-ripple">切换主题</button>
+                <button id="btnWhatsNew" class="weui-btn weui-btn_default weui-btn_mini btn-ripple js-ripple">新功能</button>
+            </div>
             <div class="app__meta">
                 <span>基于 Cursor AI 技术(HTML5+CSS3+JavaScript)</span>
                 <span class="dot">·</span>
                 <span>浏览器：<span id="browserInfo">-</span></span>
                 <span class="dot">·</span>
-                <span>版本：v3.0.1(本次更新:优化网页UI和功能)</span>
+                <span>版本：v3.0.2</span>
                 <span class="dot">·</span>
                 <span>台州王浩哥集团有限公司 © 2025</span>
                 <span class="dot">·</span>
@@ -86,12 +89,22 @@
     <!-- 设置弹窗 -->
     <div id="settingsSheet" class="weui-mask hidden" role="dialog" aria-modal="true">
         <div class="sheet">
-            <div class="sheet__header">高级设置</div>
+            <div class="sheet__header">高级设置<button id="btnSettingsClose" class="sheet__close" aria-label="关闭">×</button></div>
             <div class="sheet__content">
                 <label class="weui-cell weui-cell_switch">
                     <div class="weui-cell__bd">不重复点到（抽过不再出现）</div>
                     <div class="weui-cell__ft">
                         <input id="switchNoRepeat" class="weui-switch" type="checkbox" checked>
+                    </div>
+                </label>
+                <label class="weui-cell">
+                    <div class="weui-cell__bd">不重复清空时机</div>
+                    <div class="weui-cell__ft">
+                        <select id="selectNoRepeatExpire" class="weui-select">
+                            <option value="session" selected>刷新后</option>
+                            <option value="40m">40分钟后</option>
+                            <option value="1d">一天后</option>
+                        </select>
                     </div>
                 </label>
                 <label class="weui-cell weui-cell_switch">
@@ -127,7 +140,29 @@
             </div>
             <div class="sheet__footer">
                 <button id="btnSettingsCancel" class="weui-btn weui-btn_default">取消</button>
+                <button id="btnClearPicked" class="weui-btn weui-btn_warn">清空已抽</button>
                 <button id="btnSettingsSave" class="weui-btn weui-btn_primary">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 新功能弹窗 -->
+    <div id="whatsNewSheet" class="weui-mask hidden" role="dialog" aria-modal="true" style="z-index: 999999999;">
+        <div class="sheet">
+            <div class="sheet__header">新功能<button id="btnWhatsNewClose" class="sheet__close" aria-label="关闭">×</button></div>
+            <div class="sheet__content">
+                <div class="weui-cells__title">当前版本：v3.0.2</div>
+                <div class="weui-cells">
+                    <div class="weui-cell">优化：读秒抽人优化</div>
+                    <div class="weui-cell">优化：UI自适应拟合，超大屏与手机均更清晰</div>
+                    <div class="weui-cell">新增：一键“清空已抽”和清空已抽后不重复设置</div>
+                    <div class="weui-cell">优化：优化设置页面</div>
+                    <div class="weui-cell">修复很多已知问题</div>
+                    <div class="weui-cell">2025年9月10日  更新</div>
+                </div>
+            </div>
+            <div class="sheet__footer">
+                <button id="btnWhatsNewOk" class="weui-btn weui-btn_primary">知道了</button>
             </div>
         </div>
     </div>
