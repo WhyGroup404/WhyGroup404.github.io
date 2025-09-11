@@ -41,6 +41,25 @@
 	const inputAutoSeconds = document.getElementById('inputAutoSeconds');
 	const autoSecondsPreview = document.getElementById('autoSecondsPreview');
 	const selectNoRepeatExpire = document.getElementById('selectNoRepeatExpire');
+	// 概率权重设置相关（按学号）
+	const switchEnableWeights = document.getElementById('switchEnableWeights');
+	const btnOpenWeights = document.getElementById('btnOpenWeights');
+	const weightsSheet = document.getElementById('weightsSheet');
+	const btnWeightsClose = document.getElementById('btnWeightsClose');
+	const btnWeightsCancel = document.getElementById('btnWeightsCancel');
+	const btnWeightsSave = document.getElementById('btnWeightsSave');
+	const btnWeightsAddId = document.getElementById('btnWeightsAddId');
+	const btnWeightsClear = document.getElementById('btnWeightsClear');
+	const btnWeightsAddGroup = document.getElementById('btnWeightsAddGroup');
+	const weightsList = document.getElementById('weightsList');
+	const weightsTotal = document.getElementById('weightsTotal');
+	// 名单独立弹窗
+	const rosterSheet = document.getElementById('rosterSheet');
+	const btnOpenRoster = document.getElementById('btnOpenRoster');
+	const btnRosterClose = document.getElementById('btnRosterClose');
+	const btnRosterCancel = document.getElementById('btnRosterCancel');
+	const btnRosterSave = document.getElementById('btnRosterSave');
+	const btnRosterClear = document.getElementById('btnRosterClear');
 
 	/** 状态 **/
 	const STORAGE_KEY = 'rollcall:v1';
@@ -55,11 +74,14 @@
 	let prevLabelText = '当前学号';
 	let countdownActive = false;
 	let countdownRAF = 0;
+	// 概率权重：Map<number, number>  学号 -> 百分比
+	let weightMap = new Map();
+	let weightsEnabled = false;
 
 	/** 自适应字号：根据容器可用空间自适应显示学号 **/
 	const isCountdownVisible = () => !!displayCountdown && !displayCountdown.classList.contains('hidden');
 	const fitDisplayNumber = () => {
-		if (!displayNumber || !displayBox || isCountdownVisible()) return;
+		if (!displayNumber || !displayBox || isCountdownVisible() || isRolling) return;
 		// 计算可用宽高（预留一点内边距与标题/姓名空间）
 		const containerWidth = Math.max(0, displayBox.clientWidth - 24);
 		let containerHeight = displayBox.clientHeight;
@@ -86,7 +108,29 @@
 		displayNumber.style.fontSize = lo + 'px';
 	};
 
+	/** 在滚动过程中锁定显示容器高度，避免小屏布局抖动 */
+	const lockDisplayBoxHeight = () => {
+		if (!displayBox) return;
+		const rect = displayBox.getBoundingClientRect();
+		const h = Math.ceil(rect.height);
+		if (h > 0) {
+			displayBox.style.height = h + 'px';
+			displayBox.style.willChange = 'height';
+		}
+	};
+
+	const unlockDisplayBoxHeight = () => {
+		if (!displayBox) return;
+		displayBox.style.height = '';
+		displayBox.style.willChange = '';
+	};
+
 	/** 工具函数 **/
+	const showTip = (msg) => {
+		const hasWeuiTopTips = typeof window !== 'undefined' && window.weui && typeof window.weui.topTips === 'function';
+		if (hasWeuiTopTips) window.weui.topTips(String(msg), 2000);
+		else alert(String(msg));
+	};
 	const clampRange = (min, max) => {
 		if (!Number.isFinite(min) || !Number.isFinite(max)) return [1, 50];
 		if (min > max) return [max, min];
@@ -129,8 +173,46 @@
 			candidates.push(i);
 		}
 		if (candidates.length === 0) return null;
-		const idx = Math.floor(Math.random() * candidates.length);
-		return candidates[idx];
+		if (!weightsEnabled || weightMap.size === 0) {
+			const idx = Math.floor(Math.random() * candidates.length);
+			return candidates[idx];
+		}
+		// 构建每个候选学号的权重，未设置者取剩余平均
+		const weights = new Array(candidates.length).fill(0);
+		let assignedTotal = 0;
+		let unsetCount = 0;
+		for (let i = 0; i < candidates.length; i++) {
+			const n = candidates[i];
+			const p = Number(weightMap.get(n)) || 0;
+			if (p > 0) {
+				weights[i] = p;
+				assignedTotal += p;
+			} else {
+				unsetCount++;
+			}
+		}
+		if (assignedTotal < 100 && unsetCount > 0) {
+			const remain = Math.max(0, 100 - assignedTotal);
+			const avg = remain / unsetCount;
+			for (let i = 0; i < candidates.length; i++) {
+				if (weights[i] === 0) weights[i] = avg;
+			}
+		}
+		// 已分配总和可>100：允许按比例放大（同时保留未设权重者为0）
+		let total = 0;
+		for (let w of weights) total += Math.max(0, w);
+		if (!(total > 0)) {
+			// 如果权重总和为 0，则退化为等概率
+			const idx = Math.floor(Math.random() * candidates.length);
+			return candidates[idx];
+		}
+		// 加权随机
+		let r = Math.random() * total;
+		for (let i = 0; i < candidates.length; i++) {
+			r -= Math.max(0, weights[i]);
+			if (r <= 0) return candidates[i];
+		}
+		return candidates[candidates.length - 1];
 	};
 
 	const renderHistory = () => {};
@@ -165,6 +247,8 @@
 			themeDark: document.documentElement.classList.contains('theme-dark'),
 			showRangeBar: switchShowRangeBar ? switchShowRangeBar.checked : true,
 			autoSeconds: inputAutoSeconds ? Number(inputAutoSeconds.value) : autoSeconds,
+			weightsEnabled: switchEnableWeights ? !!switchEnableWeights.checked : weightsEnabled,
+			weightRules: Array.from(weightMap.entries()).map(([id, percent]) => ({ id, percent })),
 		};
 		localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 		// 保存元信息：不重复过期策略与时间戳
@@ -208,6 +292,17 @@
 				autoSeconds = Math.floor(s.autoSeconds);
 				if (inputAutoSeconds) inputAutoSeconds.value = String(autoSeconds);
 			}
+			// 概率权重（按学号）
+			weightsEnabled = !!s.weightsEnabled;
+			if (switchEnableWeights) switchEnableWeights.checked = weightsEnabled;
+			weightMap = new Map();
+			if (Array.isArray(s.weightRules)) {
+				for (const x of s.weightRules) {
+					if (x && Number.isFinite(x.id) && Number.isFinite(x.percent)) {
+						weightMap.set(Math.floor(x.id), Math.max(0, Math.floor(x.percent)));
+					}
+				}
+			}
 
 			// 加载过期策略并检查是否需要清空不重复集合
 			try {
@@ -236,6 +331,115 @@
 		} catch (e) {
 			console.warn('load state failed', e);
 		}
+	};
+	const openWeights = () => {
+		if (!weightsSheet) return;
+		weightsSheet.classList.remove('hidden');
+		requestAnimationFrame(() => weightsSheet.classList.add('is-open'));
+		document.body.style.overflow = 'hidden';
+		renderWeightsList();
+		updateWeightsTotal();
+	};
+
+	const closeWeights = () => {
+		if (!weightsSheet) return;
+		weightsSheet.classList.remove('is-open');
+		setTimeout(() => weightsSheet.classList.add('hidden'), 280);
+		document.body.style.overflow = '';
+	};
+
+	const makeWeightRow = (entryId, percent, index) => {
+		const row = document.createElement('div');
+		row.className = 'weui-cell';
+		row.innerHTML = `
+			<div class="weui-cell__bd">
+				<div class=\"weights-row\">
+					<label>学号 <input type=\"number\" class=\"rc-input rc-input--small js-w-id\" value=\"${entryId}\"></label>
+					<label>百分比 <input type=\"number\" class=\"rc-input rc-input--percent js-w-percent\" min=\"0\" max=\"100\" value=\"${percent}\"><span class=\"unit\">%</span></label>
+				</div>
+			</div>
+			<div class=\"weui-cell__ft\">
+				<button class=\"weui-btn weui-btn_mini weui-btn_warn js-w-del\">删除</button>
+			</div>
+		`;
+		row.querySelector('.js-w-id').addEventListener('input', (e) => {
+			const v = Math.floor(Number(e.target.value));
+			if (!Number.isFinite(v)) return;
+			// 更新键：删除旧键，写入新键
+			const oldId = entryId;
+			const p = weightMap.get(oldId) || 0;
+			if (oldId !== v) {
+				if (weightMap.has(v)) {
+					showTip('该学号已在列表中');
+					e.target.value = String(oldId);
+					return;
+				}
+				weightMap.delete(oldId);
+				entryId = v;
+				weightMap.set(entryId, p);
+			}
+			updateWeightsTotal();
+			saveState();
+		});
+		row.querySelector('.js-w-id').addEventListener('blur', (e) => {
+			const val = String(e.target.value || '').trim();
+			if (!/^\-?\d+$/.test(val)) {
+				showTip('学号需为整数');
+				e.target.value = String(entryId);
+			}
+		});
+		row.querySelector('.js-w-percent').addEventListener('input', (e) => {
+			let v = Number(e.target.value);
+			if (!Number.isFinite(v)) v = 0;
+			v = Math.max(0, Math.min(1000, Math.floor(v)));
+			weightMap.set(entryId, v);
+			updateWeightsTotal();
+			saveState();
+		});
+		row.querySelector('.js-w-percent').addEventListener('blur', (e) => {
+			const vv = Number(e.target.value);
+			if (!Number.isFinite(vv)) {
+				showTip('百分比需为数字');
+				e.target.value = String(weightMap.get(entryId) || 0);
+			}
+		});
+		row.querySelector('.js-w-del').addEventListener('click', () => {
+			weightMap.delete(entryId);
+			renderWeightsList();
+			updateWeightsTotal();
+			saveState();
+		});
+		return row;
+	};
+
+	const renderWeightsList = () => {
+		if (!weightsList) return;
+		weightsList.innerHTML = '';
+		// 固定顺序，避免局部更新引发排序变化导致看起来“只有第一个生效”错觉
+		const entries = Array.from(weightMap.entries()).sort((a,b) => a[0]-b[0]);
+		entries.forEach(([id, percent], idx) => {
+			weightsList.appendChild(makeWeightRow(id, percent, idx));
+		});
+		if (weightMap.size === 0) {
+			const empty = document.createElement('div');
+			empty.className = 'weui-cell';
+			empty.innerHTML = '<div class="weui-cell__bd" style="color:#5b776f;">暂无学号，点击“添加学号”开始配置</div>';
+			weightsList.appendChild(empty);
+		}
+	};
+
+	const updateWeightsTotal = () => {
+		if (!weightsTotal) return;
+		let total = 0;
+		for (const [id, p] of weightMap.entries()) {
+			// 仅统计当前范围内未被排除/可选的学号
+			const [min, max] = clampRange(Number(inputMin.value), Number(inputMax.value));
+			const excludeSet = parseExclude(inputExclude.value);
+			if (id >= min && id <= max && !excludeSet.has(id) && (!switchNoRepeat.checked || !pickedSet.has(id))) {
+				total += Math.max(0, Number(p) || 0);
+			}
+		}
+		weightsTotal.textContent = `${total}%`;
 	};
 
 	const applyRangeBarVisible = () => {
@@ -275,6 +479,20 @@
 		document.body.style.overflow = '';
 	};
 
+	const openRoster = () => {
+		if (!rosterSheet) return;
+		rosterSheet.classList.remove('hidden');
+		requestAnimationFrame(() => rosterSheet.classList.add('is-open'));
+		document.body.style.overflow = 'hidden';
+	};
+
+	const closeRoster = () => {
+		if (!rosterSheet) return;
+		rosterSheet.classList.remove('is-open');
+		setTimeout(() => rosterSheet.classList.add('hidden'), 280);
+		document.body.style.overflow = '';
+	};
+
 	const startRoll = () => {
 		if (isRolling) return;
 		const [minRaw, maxRaw] = [Number(inputMin.value), Number(inputMax.value)];
@@ -288,6 +506,7 @@
 			return;
 		}
 		isRolling = true;
+		lockDisplayBoxHeight();
 		btnStart?.classList.add('hidden');
 		btnStop?.classList.remove('hidden');
 		startButtons.forEach(b => b.classList.add('hidden'));
@@ -350,6 +569,8 @@
 		pickedStack.push(item);
 		renderHistory();
 		saveState();
+		// 恢复容器高度锁定
+		unlockDisplayBoxHeight();
 	};
 
 	const resetAll = () => {
@@ -434,6 +655,84 @@
 	btnWhatsNew?.addEventListener('click', openWhatsNew);
 	btnWhatsNewClose?.addEventListener('click', closeWhatsNew);
 	btnWhatsNewOk?.addEventListener('click', closeWhatsNew);
+	btnOpenRoster?.addEventListener('click', openRoster);
+	btnRosterClose?.addEventListener('click', closeRoster);
+	btnRosterCancel?.addEventListener('click', closeRoster);
+	btnRosterSave?.addEventListener('click', () => {
+		applyRoster();
+		saveState();
+		closeRoster();
+	});
+	btnRosterClear?.addEventListener('click', () => {
+		if (textareaRoster) textareaRoster.value = '';
+		applyRoster();
+		saveState();
+	});
+	btnOpenWeights?.addEventListener('click', openWeights);
+	btnWeightsClose?.addEventListener('click', closeWeights);
+	btnWeightsCancel?.addEventListener('click', closeWeights);
+	btnWeightsSave?.addEventListener('click', () => {
+		weightsEnabled = !!(switchEnableWeights && switchEnableWeights.checked);
+		saveState();
+		closeWeights();
+	});
+	btnWeightsAddId?.addEventListener('click', () => {
+		const [min, max] = clampRange(Number(inputMin.value), Number(inputMax.value));
+		let candidate = min;
+		while (candidate <= max && weightMap.has(candidate)) candidate++;
+		if (candidate > max) {
+			showTip('当前范围内学号已全部添加');
+			return;
+		}
+		weightMap.set(candidate, 0);
+		renderWeightsList();
+		updateWeightsTotal();
+		saveState();
+	});
+	btnWeightsClear?.addEventListener('click', () => {
+		weightMap.clear();
+		renderWeightsList();
+		updateWeightsTotal();
+		saveState();
+	});
+	btnWeightsAddGroup?.addEventListener('click', () => {
+		const text = prompt('请输入学号组，例如：1,2,5-10, 20-22, 33');
+		if (text == null) return;
+		if (!/[\d-]/.test(text)) {
+			showTip('格式错误，请输入整数或区间（例如：1,2,5-10）');
+			return;
+		}
+		const ids = new Set();
+		let hasInvalid = false;
+		text.split(/[,，\s]+/).filter(Boolean).forEach(tok => {
+			if (!/^\-?\d+(\s*-\s*\-?\d+)?$/.test(tok)) { hasInvalid = true; return; }
+			const m = tok.match(/^(\-?\d+)\s*-\s*(\-?\d+)$/);
+			if (m) {
+				let a = Math.floor(Number(m[1]));
+				let b = Math.floor(Number(m[2]));
+				if (Number.isFinite(a) && Number.isFinite(b)) {
+					if (a > b) [a, b] = [b, a];
+					for (let i = a; i <= b; i++) ids.add(i);
+				} else { hasInvalid = true; }
+			} else {
+				const n = Math.floor(Number(tok));
+				if (Number.isFinite(n)) ids.add(n); else hasInvalid = true;
+			}
+		});
+		if (hasInvalid || ids.size === 0) {
+			showTip('存在非法输入，请检查格式（示例：1,2,5-10）');
+			return;
+		}
+		ids.forEach(n => { if (!weightMap.has(n)) weightMap.set(n, 0); });
+		renderWeightsList();
+		updateWeightsTotal();
+		saveState();
+	});
+
+	switchEnableWeights?.addEventListener('change', () => {
+		weightsEnabled = !!switchEnableWeights.checked;
+		saveState();
+	});
 
 	btnClearPicked?.addEventListener('click', () => {
 		pickedSet.clear();
@@ -525,6 +824,8 @@
 	// 应用新增设置的初始状态
 	applyRangeBarVisible();
 	updateAutoSecondsUI();
+	// 同步一次权重 UI
+	if (weightsEnabled && switchEnableWeights) switchEnableWeights.checked = true;
 	// 初始化滑条背景
 	if (inputAutoSeconds) {
 		const p = (Number(inputAutoSeconds.value) - 1) / 9 * 100;
