@@ -77,6 +77,13 @@ html, body {
 	letter-spacing: .5px;
 }
 
+.brand__profile { margin-left: 10px; }
+.profile__label { margin-right: 6px; font-weight: 600; color: var(--brand-ink); }
+.weui-select_in-header { all: revert; }
+
+/* 恢复浏览器原生 Select 样式 */
+select.weui-select { all: revert; }
+
 .app__settings-btn {
 	border-color: var(--brand);
 	color: var(--brand);
@@ -275,43 +282,6 @@ html, body {
 	background: linear-gradient(180deg, rgba(52,211,153,0.08), rgba(16,185,129,0.03));
 	border-color: rgba(16,185,129,0.35);
 	box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 6px 14px rgba(0,0,0,0.24);
-}
-.theme-dark .weui-input, .theme-dark .weui-textarea { background: linear-gradient(180deg, rgba(52,211,153,0.06), rgba(16,185,129,0.02)), #0e1915; border-color: rgba(34,197,94,0.4); color: var(--text); color-scheme: dark; }
-.theme-dark .weui-input::placeholder, .theme-dark .weui-textarea::placeholder { color: rgba(219,245,234,0.6); }
-.theme-dark .weui-input:placeholder-shown, .theme-dark .weui-textarea:placeholder-shown { border-color: rgba(34,197,94,0.38); background: linear-gradient(180deg, rgba(52,211,153,0.10), rgba(16,185,129,0.04)); }
-.theme-dark .weui-input:focus, .theme-dark .weui-textarea:focus { border-color: var(--brand); box-shadow: 0 0 0 3px var(--ring); }
-
-/* 统一“排除学号”输入与其它输入的视觉（有时更具体选择器会覆盖，需要单独提升权重） */
-#inputExclude.weui-input {
-	appearance: none;
-	-webkit-appearance: none;
-	border: 2px solid rgba(6,78,59,0.45);
-	background: linear-gradient(180deg, rgba(16,185,129,0.08), rgba(16,185,129,0.02)), #fff;
-	border-radius: 10px;
-	padding: 8px 10px;
-	box-shadow: 0 2px 0 rgba(6,78,59,0.06), inset 0 1px 0 rgba(255,255,255,0.6);
-}
-#inputExclude.weui-input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px var(--ring), 0 2px 0 rgba(6,78,59,0.06); }
-.theme-dark #inputExclude.weui-input { background: linear-gradient(180deg, rgba(52,211,153,0.06), rgba(16,185,129,0.02)), #0e1915; border-color: rgba(34,197,94,0.4); }
-.theme-dark #inputExclude.weui-input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px var(--ring); }
-
-/* 深色模式下的文本域滚动条美化（Chromium/Edge/WebKit） */
-.theme-dark .weui-textarea::-webkit-scrollbar { width: 10px; height: 10px; }
-.theme-dark .weui-textarea::-webkit-scrollbar-track { background: #0b1512; border-radius: 10px; }
-.theme-dark .weui-textarea::-webkit-scrollbar-thumb {
-	background: rgba(52,211,153,0.45);
-	border-radius: 10px;
-	border: 2px solid #0b1512;
-}
-.theme-dark .weui-textarea::-webkit-scrollbar-thumb:hover { background: rgba(52,211,153,0.65); }
-.theme-dark .weui-textarea::-webkit-scrollbar-button { width: 0; height: 0; display: none; }
-
-/* 深色模式下下拉选择与输入的一致视觉 */
-.theme-dark .weui-select {
-	background: #0e1915;
-	border: 1px solid rgba(34,197,94,0.28);
-	color: var(--text);
-	border-radius: 12px;
 }
 .theme-dark .display {
 	background:

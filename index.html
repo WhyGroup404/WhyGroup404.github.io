@@ -25,6 +25,10 @@
             <div class="app__brand">
                 <span class="brand__logo">🎯</span>
                 <h1 class="brand__title">学号随机点名</h1>
+                <div class="brand__profile">
+                    <span class="profile__label">班级：</span>
+                    <select id="profileSelect" class="weui-select weui-select_in-header"></select>
+                </div>
             </div>
             <button id="btnOpenSettings" class="weui-btn weui-btn_default app__settings-btn" aria-label="打开设置">设置</button>
         </header>
@@ -91,6 +95,25 @@
         <div class="sheet">
             <div class="sheet__header">高级设置<button id="btnSettingsClose" class="sheet__close" aria-label="关闭" style="color: red;">×</button></div>
             <div class="sheet__content">
+                <div class="weui-cells__title">班级配置</div>
+                <div class="weui-cell">
+                    <div class="weui-cell__bd">
+                        <select id="profileSelectSettings" class="weui-select"></select>
+                    </div>
+                    <div class="weui-cell__ft" style="white-space: nowrap;">
+                        <button id="btnProfileNew" class="weui-btn weui-btn_mini weui-btn_default">新建</button>
+                        <button id="btnProfileRename" class="weui-btn weui-btn_mini weui-btn_default" style="margin-left:8px;">重命名</button>
+                        <button id="btnProfileDelete" class="weui-btn weui-btn_mini weui-btn_warn" style="margin-left:8px;">删除</button>
+                    </div>
+                </div>
+                <div class="weui-cell">
+                    <div class="weui-cell__bd">导入/导出</div>
+                    <div class="weui-cell__ft" style="white-space: nowrap;">
+                        <button id="btnProfileExport" class="weui-btn weui-btn_mini weui-btn_default">导出当前班级</button>
+                        <button id="btnProfileImport" class="weui-btn weui-btn_mini weui-btn_default" style="margin-left:8px;">导入班级</button>
+                        <input id="inputImportProfile" type="file" accept="application/json" class="hidden">
+                    </div>
+                </div>
                 <label class="weui-cell weui-cell_switch">
                     <div class="weui-cell__bd">不重复点到（抽过不再出现）</div>
                     <div class="weui-cell__ft">
@@ -172,6 +195,7 @@
                     <div class="weui-cell">优化：设置页右上角关闭按钮置顶不随滚动消失</div>
                     <div class="weui-cell">修复：权重列表新增学号立刻生效（无需重启）</div>
                     <div class="weui-cell">修复：非法输入即时提示（学号/百分比/学号组）</div>
+                    <div class="weui-cell">新增：班级配置页，支持新建、重命名、删除、导入、导出班级</div>
                     <div class="weui-cell">2025年9月11日  更新</div>
                 </div>
             </div>

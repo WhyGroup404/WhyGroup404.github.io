@@ -60,10 +60,22 @@
 	const btnRosterCancel = document.getElementById('btnRosterCancel');
 	const btnRosterSave = document.getElementById('btnRosterSave');
 	const btnRosterClear = document.getElementById('btnRosterClear');
+	// 班级配置相关
+	const profileSelect = document.getElementById('profileSelect');
+	const profileSelectSettings = document.getElementById('profileSelectSettings');
+	const btnProfileNew = document.getElementById('btnProfileNew');
+	const btnProfileRename = document.getElementById('btnProfileRename');
+	const btnProfileDelete = document.getElementById('btnProfileDelete');
+	const btnProfileExport = document.getElementById('btnProfileExport');
+	const btnProfileImport = document.getElementById('btnProfileImport');
+	const inputImportProfile = document.getElementById('inputImportProfile');
 
 	/** 状态 **/
 	const STORAGE_KEY = 'rollcall:v1';
 	const STORAGE_META_KEY = 'rollcall:v1:meta';
+	const PROFILES_KEY = 'rollcall:v1:profiles';
+	let currentProfileId = '';
+	let profilesList = []; // [{id, name}]
 	let timerId = null;
 	let isRolling = false;
 	let pickedStack = []; // 历史栈（用于撤销）
@@ -123,6 +135,63 @@
 		if (!displayBox) return;
 		displayBox.style.height = '';
 		displayBox.style.willChange = '';
+	};
+
+	/** 班级配置：工具与持久化 **/
+	const generateProfileId = () => 'p_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6);
+	const getStateKey = (pid) => `rollcall:v1:profile:${pid}`;
+	const getMetaKey = (pid) => `rollcall:v1:profile:${pid}:meta`;
+
+	const saveProfilesStructure = () => {
+		const data = { list: profilesList, currentId: currentProfileId, version: 1 };
+		try { localStorage.setItem(PROFILES_KEY, JSON.stringify(data)); } catch (_) {}
+	};
+
+	const loadProfilesStructure = () => {
+		let data = null;
+		try { const raw = localStorage.getItem(PROFILES_KEY); if (raw) data = JSON.parse(raw); } catch (_) {}
+		if (!data || !Array.isArray(data.list)) data = { list: [], currentId: '' };
+		// 迁移：旧版本仅有单一 STORAGE_KEY
+		if (data.list.length === 0) {
+			const id = 'default';
+			data.list.push({ id, name: '默认班级' });
+			data.currentId = id;
+			try {
+				const oldState = localStorage.getItem(STORAGE_KEY);
+				if (oldState) localStorage.setItem(getStateKey(id), oldState);
+				const oldMeta = localStorage.getItem(STORAGE_META_KEY);
+				if (oldMeta) localStorage.setItem(getMetaKey(id), oldMeta);
+			} catch (_) {}
+			try { localStorage.setItem(PROFILES_KEY, JSON.stringify(data)); } catch (_) {}
+		}
+		profilesList = data.list;
+		currentProfileId = data.currentId || (profilesList[0] && profilesList[0].id) || 'default';
+		if (!profilesList.some(p => p.id === currentProfileId)) {
+			currentProfileId = profilesList[0]?.id || 'default';
+		}
+	};
+
+	const populateProfileSelects = () => {
+		const optionsHtml = profilesList.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+		if (profileSelect) { profileSelect.innerHTML = optionsHtml; profileSelect.value = currentProfileId; }
+		if (profileSelectSettings) { profileSelectSettings.innerHTML = optionsHtml; profileSelectSettings.value = currentProfileId; }
+	};
+
+	const setCurrentProfile = (pid) => {
+		if (!profilesList.some(p => p.id === pid)) return;
+		currentProfileId = pid;
+		saveProfilesStructure();
+		populateProfileSelects();
+		// 加载该班级的状态到界面
+		loadState();
+		applyRoster();
+		renderHistory();
+		const last = pickedStack[pickedStack.length - 1];
+		updateDisplay(last ? last.number : null);
+		applyRangeBarVisible();
+		updateAutoSecondsUI();
+		// 同步权重 UI
+		if (weightsEnabled && switchEnableWeights) switchEnableWeights.checked = true;
 	};
 
 	/** 工具函数 **/
@@ -250,18 +319,21 @@
 			weightsEnabled: switchEnableWeights ? !!switchEnableWeights.checked : weightsEnabled,
 			weightRules: Array.from(weightMap.entries()).map(([id, percent]) => ({ id, percent })),
 		};
-		localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+		if (currentProfileId) localStorage.setItem(getStateKey(currentProfileId), JSON.stringify(state));
 		// 保存元信息：不重复过期策略与时间戳
 		const meta = {
 			noRepeatExpire,
 			pickedSavedAt: Date.now(),
 		};
-		localStorage.setItem(STORAGE_META_KEY, JSON.stringify(meta));
+		if (currentProfileId) localStorage.setItem(getMetaKey(currentProfileId), JSON.stringify(meta));
 	};
 
 	const loadState = () => {
 		try {
-			const raw = localStorage.getItem(STORAGE_KEY);
+			let raw = null;
+			if (currentProfileId) raw = localStorage.getItem(getStateKey(currentProfileId));
+			// 兼容老版本：若当前班级无数据且存在旧键
+			if (!raw) raw = localStorage.getItem(STORAGE_KEY);
 			if (!raw) return;
 			const s = JSON.parse(raw);
 			if (Number.isFinite(s.min)) inputMin.value = s.min;
@@ -271,11 +343,7 @@
 			switchAnimate.checked = s.animate !== false;
 			if (typeof s.roster === 'string') textareaRoster.value = s.roster;
 			// session 模式不加载历史 picked
-			pickedSet = new Set(
-				Array.isArray(s.picked) && s.picked.length && (!selectNoRepeatExpire || selectNoRepeatExpire.value !== 'session')
-					? s.picked
-					: []
-			);
+			pickedSet = new Set(Array.isArray(s.picked) && s.picked.length && (!selectNoRepeatExpire || selectNoRepeatExpire.value !== 'session') ? s.picked : []);
 			pickedStack = Array.isArray(s.history) ? s.history : [];
 			if (s.themeDark) {
 				document.documentElement.classList.add('theme-dark');
@@ -306,7 +374,8 @@
 
 			// 加载过期策略并检查是否需要清空不重复集合
 			try {
-				const metaRaw = localStorage.getItem(STORAGE_META_KEY);
+				let metaRaw = currentProfileId ? localStorage.getItem(getMetaKey(currentProfileId)) : null;
+				if (!metaRaw) metaRaw = localStorage.getItem(STORAGE_META_KEY);
 				if (metaRaw) {
 					const meta = JSON.parse(metaRaw);
 					if (meta && typeof meta.noRepeatExpire === 'string') {
@@ -331,6 +400,100 @@
 		} catch (e) {
 			console.warn('load state failed', e);
 		}
+	};
+
+	// 班级：CRUD 与导入导出
+	const createProfile = (name, cloneFromCurrent = true) => {
+		const id = generateProfileId();
+		const profile = { id, name: String(name || '新建班级') };
+		profilesList.push(profile);
+		// 复制当前状态（不复制已抽与历史）或创建空白
+		let base = null;
+		if (cloneFromCurrent) {
+			try {
+				saveState(); // 确保最新
+				const raw = currentProfileId ? localStorage.getItem(getStateKey(currentProfileId)) : null;
+				if (raw) base = JSON.parse(raw);
+			} catch (_) {}
+		}
+		if (!base) base = { min: 1, max: 50, exclude: '', noRepeat: true, animate: true, roster: '', picked: [], history: [], themeDark: document.documentElement.classList.contains('theme-dark'), showRangeBar: true, autoSeconds: 5, weightsEnabled: false, weightRules: [] };
+		base.picked = [];
+		base.history = [];
+		try { localStorage.setItem(getStateKey(id), JSON.stringify(base)); } catch (_) {}
+		saveProfilesStructure();
+		populateProfileSelects();
+		setCurrentProfile(id);
+	};
+
+	const renameProfile = (pid, newName) => {
+		const p = profilesList.find(x => x.id === pid);
+		if (!p) return;
+		p.name = String(newName || p.name);
+		saveProfilesStructure();
+		populateProfileSelects();
+	};
+
+	const deleteProfile = (pid) => {
+		if (profilesList.length <= 1) { showTip('至少保留一个班级'); return; }
+		const idx = profilesList.findIndex(x => x.id === pid);
+		if (idx < 0) return;
+		profilesList.splice(idx, 1);
+		try { localStorage.removeItem(getStateKey(pid)); localStorage.removeItem(getMetaKey(pid)); } catch (_) {}
+		if (currentProfileId === pid) {
+			currentProfileId = profilesList[0].id;
+		}
+		saveProfilesStructure();
+		populateProfileSelects();
+		setCurrentProfile(currentProfileId);
+	};
+
+	const exportCurrentProfile = () => {
+		try { saveState(); } catch (_) {}
+		const profile = profilesList.find(p => p.id === currentProfileId);
+		const name = profile ? profile.name : '未命名班级';
+		let state = {};
+		let meta = {};
+		try { const raw = localStorage.getItem(getStateKey(currentProfileId)); if (raw) state = JSON.parse(raw); } catch (_) {}
+		try { const m = localStorage.getItem(getMetaKey(currentProfileId)); if (m) meta = JSON.parse(m); } catch (_) {}
+		const payload = { type: 'rollcall-profile', version: 1, name, state, meta };
+		const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+		const ts = new Date();
+		const pad = (n) => String(n).padStart(2, '0');
+		const fname = `rollcall_profile_${name}_${ts.getFullYear()}${pad(ts.getMonth()+1)}${pad(ts.getDate())}_${pad(ts.getHours())}${pad(ts.getMinutes())}${pad(ts.getSeconds())}.json`;
+		const a = document.createElement('a');
+		a.href = URL.createObjectURL(blob);
+		a.download = fname;
+		document.body.appendChild(a);
+		a.click();
+		setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 100);
+	};
+
+	const importProfileFromFile = (file) => {
+		if (!file) return;
+		const reader = new FileReader();
+		reader.onload = () => {
+			try {
+				const obj = JSON.parse(String(reader.result || '{}'));
+				let name = String(obj && obj.name) || (file.name.replace(/\.json$/i, '')) || '导入班级';
+				let state = obj && obj.state ? obj.state : obj; // 兼容直接导入状态对象
+				if (!state || typeof state !== 'object') { showTip('导入文件格式不正确'); return; }
+				const id = generateProfileId();
+				profilesList.push({ id, name });
+				// 清理异常字段
+				if (!Array.isArray(state.weightRules)) state.weightRules = [];
+				if (!Array.isArray(state.picked)) state.picked = [];
+				if (!Array.isArray(state.history)) state.history = [];
+				localStorage.setItem(getStateKey(id), JSON.stringify(state));
+				if (obj && obj.meta) localStorage.setItem(getMetaKey(id), JSON.stringify(obj.meta));
+				saveProfilesStructure();
+				populateProfileSelects();
+				setCurrentProfile(id);
+				showTip('导入成功');
+			} catch (e) {
+				showTip('导入失败：' + e.message);
+			}
+		};
+		reader.readAsText(file);
 	};
 	const openWeights = () => {
 		if (!weightsSheet) return;
@@ -729,6 +892,36 @@
 		saveState();
 	});
 
+	// 班级切换/管理事件
+	profileSelect?.addEventListener('change', () => {
+		setCurrentProfile(profileSelect.value);
+	});
+	profileSelectSettings?.addEventListener('change', () => {
+		setCurrentProfile(profileSelectSettings.value);
+	});
+	btnProfileNew?.addEventListener('click', () => {
+		const name = prompt('请输入新班级名称', '新建班级');
+		if (name == null) return;
+		createProfile(String(name).trim() || '新建班级', true);
+	});
+	btnProfileRename?.addEventListener('click', () => {
+		const prof = profilesList.find(p => p.id === currentProfileId);
+		const name = prompt('重命名班级', prof ? prof.name : '');
+		if (name == null) return;
+		renameProfile(currentProfileId, String(name).trim() || '未命名班级');
+	});
+	btnProfileDelete?.addEventListener('click', () => {
+		if (!confirm('确定删除当前班级吗？该操作不可恢复。')) return;
+		deleteProfile(currentProfileId);
+	});
+	btnProfileExport?.addEventListener('click', () => exportCurrentProfile());
+	btnProfileImport?.addEventListener('click', () => inputImportProfile && inputImportProfile.click());
+	inputImportProfile?.addEventListener('change', (e) => {
+		const file = e.target.files && e.target.files[0];
+		if (file) importProfileFromFile(file);
+		e.target.value = '';
+	});
+
 	switchEnableWeights?.addEventListener('change', () => {
 		weightsEnabled = !!switchEnableWeights.checked;
 		saveState();
@@ -815,6 +1008,8 @@
 	});
 
 	// 初始化
+	loadProfilesStructure();
+	populateProfileSelects();
 	loadState();
 	applyRoster();
 	renderHistory();
