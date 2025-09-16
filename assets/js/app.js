@@ -35,6 +35,13 @@
 	const whatsNewSheet = document.getElementById('whatsNewSheet');
 	const btnWhatsNewClose = document.getElementById('btnWhatsNewClose');
 	const btnWhatsNewOk = document.getElementById('btnWhatsNewOk');
+	// 顶部横幅
+	const topBanner = document.getElementById('topBanner');
+	const topBannerText = document.getElementById('topBannerText');
+	const topBannerClose = document.getElementById('topBannerClose');
+	const btnShowBlueBanner = null;
+	const btnShowRedBanner = null;
+	const headerEl = document.querySelector('.app__header');
 	// 新增设置控件
 	const switchShowRangeBar = document.getElementById('switchShowRangeBar');
 	const rangeBar = document.getElementById('rangeBar');
@@ -43,6 +50,7 @@
 	const selectNoRepeatExpire = document.getElementById('selectNoRepeatExpire');
 	// 概率权重设置相关（按学号）
 	const switchEnableWeights = document.getElementById('switchEnableWeights');
+	const switchWeightsMask = document.getElementById('switchWeightsMask');
 	const btnOpenWeights = document.getElementById('btnOpenWeights');
 	const weightsSheet = document.getElementById('weightsSheet');
 	const btnWeightsClose = document.getElementById('btnWeightsClose');
@@ -53,6 +61,7 @@
 	const btnWeightsAddGroup = document.getElementById('btnWeightsAddGroup');
 	const weightsList = document.getElementById('weightsList');
 	const weightsTotal = document.getElementById('weightsTotal');
+	const switchWeightsIgnoreNoRepeat = document.getElementById('switchWeightsIgnoreNoRepeat');
 	// 名单独立弹窗
 	const rosterSheet = document.getElementById('rosterSheet');
 	const btnOpenRoster = document.getElementById('btnOpenRoster');
@@ -60,6 +69,15 @@
 	const btnRosterCancel = document.getElementById('btnRosterCancel');
 	const btnRosterSave = document.getElementById('btnRosterSave');
 	const btnRosterClear = document.getElementById('btnRosterClear');
+	// 名单工具（新增）
+	const rosterStats = document.getElementById('rosterStats');
+	const btnRosterFormat = document.getElementById('btnRosterFormat');
+	const btnRosterSortId = document.getElementById('btnRosterSortId');
+	const btnRosterSortName = document.getElementById('btnRosterSortName');
+	const btnRosterDedup = document.getElementById('btnRosterDedup');
+	const btnRosterTrim = document.getElementById('btnRosterTrim');
+	const btnRosterCopy = document.getElementById('btnRosterCopy');
+	const btnRosterPaste = document.getElementById('btnRosterPaste');
 	// 班级配置相关
 	const profileSelect = document.getElementById('profileSelect');
 	const profileSelectSettings = document.getElementById('profileSelectSettings');
@@ -86,9 +104,12 @@
 	let prevLabelText = '当前学号';
 	let countdownActive = false;
 	let countdownRAF = 0;
+	let fixedDisplayHeight = 0; // 固定显示框高度（像素）
 	// 概率权重：Map<number, number>  学号 -> 百分比
 	let weightMap = new Map();
 	let weightsEnabled = false;
+	let weightsIgnoreNoRepeat = false; // 已设置权重的学号可忽略“不重复”
+	let weightsMaskEnabled = false; // 掩盖概率：滚动时不按权重，结果按权重
 
 	/** 自适应字号：根据容器可用空间自适应显示学号 **/
 	const isCountdownVisible = () => !!displayCountdown && !displayCountdown.classList.contains('hidden');
@@ -105,8 +126,8 @@
 
 		if (containerWidth <= 0 || containerHeight <= 0) return;
 
-		const maxPx = 1400; // 上限保护
-		const minPx = 48; // 下限保护
+		const maxPx = 2000; // 上限保护更高，允许竖屏更大
+		const minPx = window.innerWidth <= 640 ? 96 : 48; // 小屏下进一步提高下限
 		let lo = minPx, hi = maxPx;
 		// 先重置为中间值以减少跳动影响测量
 		displayNumber.style.fontSize = '';
@@ -124,17 +145,51 @@
 	const lockDisplayBoxHeight = () => {
 		if (!displayBox) return;
 		const rect = displayBox.getBoundingClientRect();
-		const h = Math.ceil(rect.height);
+		const h = Math.ceil(fixedDisplayHeight > 0 ? fixedDisplayHeight : rect.height);
+		const w = Math.ceil(rect.width);
 		if (h > 0) {
 			displayBox.style.height = h + 'px';
-			displayBox.style.willChange = 'height';
+			displayBox.style.minHeight = h + 'px';
+			// 小屏设备同时锁定宽度，避免地址栏/滚动条变化导致抖动
+			if (window.innerWidth <= 420 && w > 0) {
+				displayBox.style.width = w + 'px';
+			}
+			displayBox.style.willChange = 'height,width';
 		}
+	};
+
+	const setFixedDisplayHeight = () => {
+		if (!displayBox) return;
+		const rect = displayBox.getBoundingClientRect();
+		const h = Math.ceil(rect.height);
+		if (h > 0) fixedDisplayHeight = Math.max(fixedDisplayHeight, h);
+		lockDisplayBoxHeight();
 	};
 
 	const unlockDisplayBoxHeight = () => {
 		if (!displayBox) return;
 		displayBox.style.height = '';
+		displayBox.style.minHeight = '';
+		displayBox.style.width = '';
 		displayBox.style.willChange = '';
+	};
+
+	// 重新计算并锁定显示框高度（用于窗口变化后保持前后一致）
+	const refreshAndLockDisplayBoxHeight = () => {
+		if (!displayBox) return;
+		// 先释放，再按当前内容高度重新锁定
+		const prevWill = displayBox.style.willChange;
+		unlockDisplayBoxHeight();
+		// 等待一帧，让内容尺寸稳定
+		requestAnimationFrame(() => {
+			const rect = displayBox.getBoundingClientRect();
+			const h = Math.ceil(rect.height);
+			if (h > 0) {
+				displayBox.style.height = h + 'px';
+				displayBox.style.minHeight = h + 'px';
+				displayBox.style.willChange = prevWill || 'height,width';
+			}
+		});
 	};
 
 	/** 班级配置：工具与持久化 **/
@@ -201,15 +256,25 @@
 		else alert(String(msg));
 	};
 	const clampRange = (min, max) => {
-		if (!Number.isFinite(min) || !Number.isFinite(max)) return [1, 50];
-		if (min > max) return [max, min];
-		return [Math.floor(min), Math.floor(max)];
+		// 对任意输入做健壮解析，只提取首个整数，失败则给默认值
+		const parseFirstInt = (value, fallback) => {
+			if (Number.isFinite(value)) return Math.floor(value);
+			const s = String(value ?? '').match(/-?\d+/);
+			return s ? Math.floor(Number(s[0])) : fallback;
+		};
+		const a = parseFirstInt(min, 1);
+		const b = parseFirstInt(max, 50);
+		if (!Number.isFinite(a) || !Number.isFinite(b)) return [1, 50];
+		if (a > b) return [b, a];
+		return [a, b];
 	};
 
 	const parseExclude = (text) => {
 		if (!text) return new Set();
+		// 将中文逗号等分隔符统一转换为英文逗号，再按非数字/连字符切分
+		const normalized = String(text).replace(/[，、；;\s]+/g, ',').replace(/,+/g, ',');
 		return new Set(
-			text
+			normalized
 				.split(/[^-\d]+/)
 				.map((s) => s.trim())
 				.filter(Boolean)
@@ -235,14 +300,33 @@
 	};
 
 	const sampleInt = (min, max, excludeSet, noRepeat) => {
+		// 先判断当前范围是否存在正权重学号
+		let hasPositiveWeightInRange = false;
+		for (let i = min; i <= max; i++) {
+			if (excludeSet.has(i)) continue;
+			if ((Number(weightMap.get(i)) || 0) > 0) { hasPositiveWeightInRange = true; break; }
+		}
+		const ignoreNoRepeatActive = !!(noRepeat && weightsIgnoreNoRepeat && hasPositiveWeightInRange);
+
 		const candidates = [];
 		for (let i = min; i <= max; i++) {
 			if (excludeSet.has(i)) continue;
-			if (noRepeat && pickedSet.has(i)) continue;
+			if (noRepeat && pickedSet.has(i)) {
+				// 开启“权重学号忽略不重复”时，让有正权重的学号不受不重复限制
+				const isWeightedPositive = (Number(weightMap.get(i)) || 0) > 0;
+				if (!(ignoreNoRepeatActive && isWeightedPositive)) continue;
+			}
 			candidates.push(i);
 		}
 		if (candidates.length === 0) return null;
-		if (!weightsEnabled || weightMap.size === 0) {
+		// 若开启权重或候选中存在正权重，则使用加权抽取
+		let useWeighted = !!weightsEnabled;
+		if (!useWeighted) {
+			for (let i = 0; i < candidates.length; i++) {
+				if ((Number(weightMap.get(candidates[i])) || 0) > 0) { useWeighted = true; break; }
+			}
+		}
+		if (!useWeighted || (weightsMaskEnabled && isRolling)) {
 			const idx = Math.floor(Math.random() * candidates.length);
 			return candidates[idx];
 		}
@@ -317,6 +401,8 @@
 			showRangeBar: switchShowRangeBar ? switchShowRangeBar.checked : true,
 			autoSeconds: inputAutoSeconds ? Number(inputAutoSeconds.value) : autoSeconds,
 			weightsEnabled: switchEnableWeights ? !!switchEnableWeights.checked : weightsEnabled,
+			weightsMaskEnabled: switchWeightsMask ? !!switchWeightsMask.checked : weightsMaskEnabled,
+			weightsIgnoreNoRepeat: switchWeightsIgnoreNoRepeat ? !!switchWeightsIgnoreNoRepeat.checked : weightsIgnoreNoRepeat,
 			weightRules: Array.from(weightMap.entries()).map(([id, percent]) => ({ id, percent })),
 		};
 		if (currentProfileId) localStorage.setItem(getStateKey(currentProfileId), JSON.stringify(state));
@@ -363,6 +449,10 @@
 			// 概率权重（按学号）
 			weightsEnabled = !!s.weightsEnabled;
 			if (switchEnableWeights) switchEnableWeights.checked = weightsEnabled;
+			weightsMaskEnabled = !!s.weightsMaskEnabled;
+			if (switchWeightsMask) switchWeightsMask.checked = weightsMaskEnabled;
+			weightsIgnoreNoRepeat = !!s.weightsIgnoreNoRepeat;
+			if (switchWeightsIgnoreNoRepeat) switchWeightsIgnoreNoRepeat.checked = weightsIgnoreNoRepeat;
 			weightMap = new Map();
 			if (Array.isArray(s.weightRules)) {
 				for (const x of s.weightRules) {
@@ -598,7 +688,8 @@
 			// 仅统计当前范围内未被排除/可选的学号
 			const [min, max] = clampRange(Number(inputMin.value), Number(inputMax.value));
 			const excludeSet = parseExclude(inputExclude.value);
-			if (id >= min && id <= max && !excludeSet.has(id) && (!switchNoRepeat.checked || !pickedSet.has(id))) {
+			const ignoreNR = !!(switchNoRepeat.checked && switchWeightsIgnoreNoRepeat && switchWeightsIgnoreNoRepeat.checked);
+			if (id >= min && id <= max && !excludeSet.has(id) && (!switchNoRepeat.checked || ignoreNR || !pickedSet.has(id))) {
 				total += Math.max(0, Number(p) || 0);
 			}
 		}
@@ -658,27 +749,51 @@
 
 	const startRoll = () => {
 		if (isRolling) return;
+		// 校验最小/最大是否已填写
+		const minStr = String(inputMin?.value ?? '').trim();
+		const maxStr = String(inputMax?.value ?? '').trim();
+		const hasMin = minStr !== '' && Number.isFinite(Number(minStr));
+		const hasMax = maxStr !== '' && Number.isFinite(Number(maxStr));
+		if (!hasMin || !hasMax) {
+			try { (!hasMin ? inputMin : inputMax)?.focus(); } catch (_) {}
+			try { showBanner && showBanner('请填写最大和最小学号阈值后再开始', 'red', 5000, { showClose: true }); } catch (_) {}
+			return;
+		}
 		const [minRaw, maxRaw] = [Number(inputMin.value), Number(inputMax.value)];
+		// 顺序校验：最小值必须小于最大值
+		if (!(minRaw < maxRaw)) {
+			let msg = '';
+			if (minRaw > maxRaw) msg = `最小值应该小于最大值，你输入的${minRaw}不合规`;
+			else msg = `最大值应该大于最小值，你输入的${maxRaw}不合格`;
+			try { showBanner && showBanner(msg, 'red', 5000, { showClose: true }); } catch (_) {}
+			try { (minRaw >= maxRaw ? inputMin : inputMax)?.focus(); } catch (_) {}
+			return;
+		}
 		const [min, max] = clampRange(minRaw, maxRaw);
 		const excludeSet = parseExclude(inputExclude.value);
 		const noRepeat = switchNoRepeat.checked;
 		const canPick = sampleInt(min, max, excludeSet, noRepeat);
 		if (canPick == null) {
-			const hasWeuiTopTips = typeof window !== 'undefined' && window.weui && typeof window.weui.topTips === 'function';
-			hasWeuiTopTips ? window.weui.topTips('可选学号为空，请检查范围/排除/不重复设置') : alert('可选学号为空，请检查范围/排除/不重复设置');
+			const msg = '系统中可选的学号为空（都抽完了TAT），请检查“范围/排除/不重复/概率”设置';
+			try { showBanner && showBanner(msg, 'red', 5000, { showClose: true }); }
+			catch (_) { try { alert(msg); } catch (_) {} }
 			return;
 		}
 		isRolling = true;
-		lockDisplayBoxHeight();
+		// 先按未滚动状态记录并锁定固定高度，确保开始后不变小
+		setFixedDisplayHeight();
 		btnStart?.classList.add('hidden');
 		btnStop?.classList.remove('hidden');
 		startButtons.forEach(b => b.classList.add('hidden'));
 		stopButtons.forEach(b => b.classList.remove('hidden'));
 		document.querySelector('.app')?.classList.toggle('rolling', switchAnimate.checked);
+		// 下一帧再锁定一次，确保最终高度稳定
+		requestAnimationFrame(() => lockDisplayBoxHeight());
 		const exclude = excludeSet;
 		const animate = switchAnimate.checked;
 		timerId = setInterval(() => {
-			const n = sampleInt(min, max, exclude, false);
+			// 滚动中：若开启掩盖概率，则用均匀随机；否则遵循当前设置
+			const n = sampleInt(min, max, exclude, noRepeat);
 			updateDisplay(n);
 		}, animate ? 60 : 100);
 	};
@@ -693,6 +808,8 @@
 		clearInterval(timerId);
 		timerId = null;
 		document.querySelector('.app')?.classList.remove('rolling');
+		// 停止后也保持固定高度，直到用户下一次显式刷新/改变布局
+		lockDisplayBoxHeight();
 
 		// 如果处于读秒，取消动画帧并恢复界面
 		if (countdownActive) {
@@ -708,7 +825,22 @@
 		const [min, max] = clampRange(Number(inputMin.value), Number(inputMax.value));
 		const excludeSet = parseExclude(inputExclude.value);
 		const noRepeat = switchNoRepeat.checked;
-		const n = sampleInt(min, max, excludeSet, noRepeat);
+		// 停止时：若开启掩盖概率，最终结果必须按权重抽取
+		let n = null;
+		if (weightsMaskEnabled && weightsEnabled) {
+			// 强制按权重：临时置 true 并忽略 rolling 状态
+			const prev = isRolling; isRolling = false;
+			n = (function weightedPick(){
+				const candidates = [];
+				for (let i=min;i<=max;i++){ if(!excludeSet.has(i)) candidates.push(i); }
+				if (candidates.length===0) return null;
+				// 快路径：复用 sampleInt 的加权逻辑
+				return sampleInt(min, max, excludeSet, noRepeat);
+			})();
+			isRolling = prev;
+		} else {
+			n = sampleInt(min, max, excludeSet, noRepeat);
+		}
 		if (n == null) {
 			updateDisplay(null);
 			return;
@@ -732,8 +864,8 @@
 		pickedStack.push(item);
 		renderHistory();
 		saveState();
-		// 恢复容器高度锁定
-		unlockDisplayBoxHeight();
+		// 保持容器高度一致（不释放高度）
+		refreshAndLockDisplayBoxHeight();
 	};
 
 	const resetAll = () => {
@@ -763,6 +895,119 @@
 		rosterMap = parseRoster(textareaRoster.value);
 		const current = Number(displayNumber.textContent);
 		if (Number.isFinite(current)) updateDisplay(current);
+	};
+
+	/** 自定义名单：辅助工具 **/
+	const parseRosterLines = (raw) => {
+		const lines = String(raw || '')
+			.replace(/[\u3000\t]+/g, ' ') // 全角空格/制表符 -> 空格
+			.replace(/[\r]+/g, '')
+			.split(/\n/);
+		const entries = [];
+		const invalid = [];
+		for (let i = 0; i < lines.length; i++) {
+			const line = lines[i].trim();
+			if (!line) continue;
+			const m = line.match(/^(\-?\d+)\s+(.+)$/);
+			if (m) {
+				const id = Math.floor(Number(m[1]));
+				const name = m[2].replace(/\s+/g, ' ').trim();
+				entries.push({ id, name });
+			} else {
+				invalid.push({ index: i, text: line });
+			}
+		}
+		return { entries, invalid };
+	};
+
+	const stringifyRoster = (entries) => entries.map((e) => `${e.id} ${e.name}`).join('\n');
+
+	const normalizeRoster = (raw) => {
+		const { entries } = parseRosterLines(raw);
+		return stringifyRoster(entries);
+	};
+
+	const sortRosterById = (raw) => {
+		const { entries } = parseRosterLines(raw);
+		entries.sort((a, b) => a.id - b.id || a.name.localeCompare(b.name, 'zh-Hans-CN'));
+		return stringifyRoster(entries);
+	};
+
+	const sortRosterByName = (raw) => {
+		const { entries } = parseRosterLines(raw);
+		entries.sort((a, b) => a.name.localeCompare(b.name, 'zh-Hans-CN', { numeric: true }) || a.id - b.id);
+		return stringifyRoster(entries);
+	};
+
+	const dedupeRosterById = (raw) => {
+		const { entries } = parseRosterLines(raw);
+		const seen = new Set();
+		const result = [];
+		for (const e of entries) {
+			if (seen.has(e.id)) continue; // 保留第一次出现
+			seen.add(e.id);
+			result.push(e);
+		}
+		return stringifyRoster(result);
+	};
+
+	const trimRosterEmptyLines = (raw) => String(raw || '')
+		.replace(/[\r]+/g, '')
+		.split(/\n/)
+		.map((s) => s.trim())
+		.filter(Boolean)
+		.join('\n');
+
+	const updateRosterStats = () => {
+		if (!rosterStats || !textareaRoster) return;
+		const raw = String(textareaRoster.value || '');
+		const totalLines = raw.replace(/[\r]+/g, '').split(/\n/).filter(() => true).length;
+		const { entries, invalid } = parseRosterLines(raw);
+		let duplicateCount = 0;
+		const seen = new Set();
+		for (const e of entries) { if (seen.has(e.id)) duplicateCount++; else seen.add(e.id); }
+		const validCount = entries.length;
+		const invalidCount = invalid.length;
+		rosterStats.textContent = `共 ${totalLines} 行 · 合法 ${validCount} · 无效 ${invalidCount} · 重复 ${duplicateCount}`;
+	};
+
+	const setRosterAndRefresh = (text) => {
+		if (!textareaRoster) return;
+		textareaRoster.value = text;
+		applyRoster();
+		updateRosterStats();
+		saveState();
+	};
+
+	const copyRosterToClipboard = async () => {
+		try {
+			await navigator.clipboard.writeText(String(textareaRoster?.value || ''));
+			showTip('已复制到剪贴板');
+		} catch (_) {
+			try {
+				textareaRoster?.select();
+				document.execCommand('copy');
+				showTip('已复制');
+			} catch (e) { showTip('复制失败'); }
+		}
+	};
+
+	const pasteFromClipboard = async () => {
+		if (!textareaRoster) return;
+		try {
+			const text = await navigator.clipboard.readText();
+			if (!text) return;
+			const el = textareaRoster;
+			const start = el.selectionStart || el.value.length;
+			const end = el.selectionEnd || el.value.length;
+			const before = el.value.slice(0, start);
+			const after = el.value.slice(end);
+			const insert = text.replace(/[\r]+/g, '');
+			setRosterAndRefresh(before + insert + after);
+			// 恢复光标
+			const newPos = start + insert.length;
+			requestAnimationFrame(() => { try { el.selectionStart = el.selectionEnd = newPos; el.focus(); } catch (_) {} });
+		} catch (e) { showTip('读取剪贴板失败'); }
 	};
 
 	const toggleTheme = () => {
@@ -799,6 +1044,35 @@
 		}
 	};
 
+	/** 顶部横幅 API **/
+	const showBanner = (message, color = 'blue', durationMs = 3000, options = {}) => {
+		if (!topBanner || !topBannerText) return;
+		topBanner.classList.remove('banner--blue', 'banner--red');
+		topBanner.classList.add(color === 'red' ? 'banner--red' : 'banner--blue');
+		topBannerText.textContent = String(message || '');
+		topBanner.style.width = 'auto';
+		// 定位到页眉下方
+		try {
+			const rect = headerEl ? headerEl.getBoundingClientRect() : { bottom: 0 };
+			const top = Math.max(0, rect.bottom + 8 + (window.scrollY || window.pageYOffset || 0));
+			topBanner.style.top = top + 'px';
+		} catch (_) {}
+		// 关闭按钮可选（默认显示）
+		const showClose = options && Object.prototype.hasOwnProperty.call(options, 'showClose') ? !!options.showClose : true;
+		if (topBannerClose) topBannerClose.style.display = showClose ? '' : 'none';
+		topBanner.classList.remove('hidden');
+		requestAnimationFrame(() => topBanner.classList.add('is-show'));
+		if (Number.isFinite(durationMs) && durationMs > 0) {
+			setTimeout(() => hideBanner(), durationMs);
+		}
+	};
+
+	const hideBanner = () => {
+		if (!topBanner) return;
+		topBanner.classList.remove('is-show');
+		setTimeout(() => topBanner.classList.add('hidden'), 300);
+	};
+
 	/** 事件绑定 **/
 	btnStart?.addEventListener('click', startRoll);
 	btnStop?.addEventListener('click', stopRoll);
@@ -818,6 +1092,21 @@
 	btnWhatsNew?.addEventListener('click', openWhatsNew);
 	btnWhatsNewClose?.addEventListener('click', closeWhatsNew);
 	btnWhatsNewOk?.addEventListener('click', closeWhatsNew);
+	// 测试按钮（后期可删）
+	// 测试按钮已移除
+	topBannerClose?.addEventListener('click', () => hideBanner());
+
+	// 当窗口尺寸或滚动变化时，若横幅可见，保持其紧贴页眉下方
+	const syncBannerPosition = () => {
+		if (!topBanner || topBanner.classList.contains('hidden')) return;
+		try {
+			const rect = headerEl ? headerEl.getBoundingClientRect() : { bottom: 0 };
+			const top = Math.max(0, rect.bottom + 8 + (window.scrollY || window.pageYOffset || 0));
+			topBanner.style.top = top + 'px';
+		} catch (_) {}
+	};
+	window.addEventListener('resize', syncBannerPosition);
+	window.addEventListener('scroll', syncBannerPosition, { passive: true });
 	btnOpenRoster?.addEventListener('click', openRoster);
 	btnRosterClose?.addEventListener('click', closeRoster);
 	btnRosterCancel?.addEventListener('click', closeRoster);
@@ -836,6 +1125,8 @@
 	btnWeightsCancel?.addEventListener('click', closeWeights);
 	btnWeightsSave?.addEventListener('click', () => {
 		weightsEnabled = !!(switchEnableWeights && switchEnableWeights.checked);
+		weightsMaskEnabled = !!(switchWeightsMask && switchWeightsMask.checked);
+		weightsIgnoreNoRepeat = !!(switchWeightsIgnoreNoRepeat && switchWeightsIgnoreNoRepeat.checked);
 		saveState();
 		closeWeights();
 	});
@@ -927,6 +1218,17 @@
 		saveState();
 	});
 
+	switchWeightsMask?.addEventListener('change', () => {
+		weightsMaskEnabled = !!switchWeightsMask.checked;
+		saveState();
+	});
+
+	switchWeightsIgnoreNoRepeat?.addEventListener('change', () => {
+		weightsIgnoreNoRepeat = !!switchWeightsIgnoreNoRepeat.checked;
+		saveState();
+		updateWeightsTotal();
+	});
+
 	btnClearPicked?.addEventListener('click', () => {
 		pickedSet.clear();
 		pickedStack = [];
@@ -982,6 +1284,16 @@
 		});
 	});
 
+	// 输入排除学号时，自动将中文逗号等替换为英文逗号
+	inputExclude?.addEventListener('input', (e) => {
+		const v = String(e.target.value || '');
+		// 仅保留数字、负号、逗号；把中文标点空白统一成英文逗号
+		let normalized = v.replace(/[，、；;\s]+/g, ',').replace(/[^\d,\-]+/g, '').replace(/,+/g, ',');
+		// 负号只允许出现在数字前面：把多余的负号去掉
+		normalized = normalized.replace(/(,|^)-+(?=,|$)/g, '');
+		if (normalized !== v) e.target.value = normalized;
+	});
+
 	// 不重复过期策略变更
 	selectNoRepeatExpire?.addEventListener('change', () => {
 		noRepeatExpire = selectNoRepeatExpire.value || 'session';
@@ -1005,6 +1317,25 @@
 		// 预览姓名显示
 		applyRoster();
 		requestAnimationFrame(fitDisplayNumber);
+		updateRosterStats();
+	});
+
+	// 名单工具按钮事件
+	btnRosterFormat?.addEventListener('click', () => setRosterAndRefresh(normalizeRoster(textareaRoster.value)));
+	btnRosterSortId?.addEventListener('click', () => setRosterAndRefresh(sortRosterById(textareaRoster.value)));
+	btnRosterSortName?.addEventListener('click', () => setRosterAndRefresh(sortRosterByName(textareaRoster.value)));
+	btnRosterDedup?.addEventListener('click', () => setRosterAndRefresh(dedupeRosterById(textareaRoster.value)));
+	btnRosterTrim?.addEventListener('click', () => setRosterAndRefresh(trimRosterEmptyLines(textareaRoster.value)));
+	btnRosterCopy?.addEventListener('click', () => copyRosterToClipboard());
+	btnRosterPaste?.addEventListener('click', () => pasteFromClipboard());
+
+	// Ctrl+S / Cmd+S 保存名单
+	textareaRoster?.addEventListener('keydown', (e) => {
+		const isSave = (e.key === 's' || e.key === 'S') && (e.ctrlKey || e.metaKey);
+		if (isSave) {
+			e.preventDefault();
+			btnRosterSave?.click();
+		}
 	});
 
 	// 初始化
@@ -1026,14 +1357,17 @@
 		const p = (Number(inputAutoSeconds.value) - 1) / 9 * 100;
 		inputAutoSeconds.style.setProperty('--_val', p + '%');
 	}
-	// 监听尺寸变化，保持字号自适应
+	// 监听尺寸变化，保持字号自适应与容器高度一致
 	window.addEventListener('resize', () => requestAnimationFrame(fitDisplayNumber));
+	window.addEventListener('resize', () => refreshAndLockDisplayBoxHeight());
 	if (window.ResizeObserver && displayBox) {
 		try {
-			const ro = new ResizeObserver(() => requestAnimationFrame(fitDisplayNumber));
+			const ro = new ResizeObserver(() => { requestAnimationFrame(fitDisplayNumber); refreshAndLockDisplayBoxHeight(); });
 			ro.observe(displayBox);
 		} catch (_) {}
 	}
+
+	// 放开最小/最大输入：允许任意字符，解析时再校验
 })();
 
 // 简易彩带实现（无第三方库）
