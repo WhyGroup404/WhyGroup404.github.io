@@ -22,6 +22,8 @@
 
 }
 
+/* 删除自适应视口变量 */
+
 /* 本地中文字体（请将 SC.ttf 放到 assets/fonts/SC.ttf 或项目根目录） */
 @font-face {
 	font-family: "SC";
@@ -50,6 +52,14 @@ html, body {
 	color: var(--text);
 	font-family: "SC", "Segoe UI", -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Helvetica, Arial, sans-serif;
 	overflow-x: hidden; /* 防止小屏横向抖动 */
+}
+
+/* 移动端左右对称：所有主要容器按安全区域留白（避免只左侧留空） */
+.app__header,
+.app__main,
+.app__footer {
+	padding-left: calc(var(--page-padding-x, 16px) + env(safe-area-inset-left, 0px));
+	padding-right: calc(var(--page-padding-x, 16px) + env(safe-area-inset-right, 0px));
 }
 
 /* 初始隐藏主体，显示加载层 */
@@ -81,12 +91,14 @@ html, body {
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
-	padding: 16px 20px;
+	padding-top: 16px;
+	padding-bottom: 16px;
 	position: sticky;
 	top: 0;
 	background: linear-gradient(180deg, var(--card), rgba(255,255,255,0.6));
 	backdrop-filter: saturate(140%) blur(6px);
 	box-shadow: 0 1px 0 rgba(0,0,0,0.06);
+	z-index: 50; /* 提升层级，避免被内容覆盖 */
 }
 
 .app__brand {
@@ -238,7 +250,7 @@ select.weui-select { all: revert; }
 input.weui-input[type="number"]::-webkit-outer-spin-button,
 input.weui-input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 input.weui-input[type="number"] { -moz-appearance: textfield; }
-}
+
 
 .weui-input:focus, .weui-textarea:focus { box-shadow: 0 0 0 3px var(--ring), 0 2px 0 rgba(6,78,59,0.06); border-color: var(--brand); background: #fff; }
 
@@ -303,6 +315,11 @@ input.weui-input[type="number"] { -moz-appearance: textfield; }
 	overflow: hidden; /* 避免内容溢出引发滚动抖动 */
 	contain: content; /* 更强隔离，减少小屏抖动 */
 	min-height: 200px; /* 小屏兜底高度，避免内容推挤抖动 */
+	max-height: none;
+	/* 让中间数字始终几何居中 */
+	display: grid;
+	grid-template-rows: auto 1fr auto; /* label / number / name */
+	align-items: center;
 }
 
 .display__label {
@@ -313,7 +330,7 @@ input.weui-input[type="number"] { -moz-appearance: textfield; }
 }
 
 .display__number {
-	font-size: clamp(64px, 14vw, 136px); /* 降低小屏基准，避免过大 */
+	font-size: 168px;
 	font-weight: 900;
 	letter-spacing: 1.5px;
 	color: var(--brand-ink);
@@ -323,7 +340,10 @@ input.weui-input[type="number"] { -moz-appearance: textfield; }
 	white-space: nowrap;
 	will-change: transform, filter; /* 启用合成层，减少重排 */
 	backface-visibility: hidden;
-	font-variant-numeric: tabular-nums lining-nums; /* 数字等宽，减少宽度跳动 */
+	/* 使用继承字体（保持以前的字体效果） */
+	display: inline-block; /* 允许设置稳定最小宽度 */
+	min-width: var(--number-min-width, auto); /* JS 可设置为 Nch，避免不同位数跳动 */
+	margin: 0 auto; /* 视觉水平居中 */
 }
 
 .display__name {
@@ -332,6 +352,9 @@ input.weui-input[type="number"] { -moz-appearance: textfield; }
 	color: var(--text);
 	opacity: .85;
 }
+
+/* 数字滚动时隐藏姓名但保留占位，避免垂直抖动 */
+.display__name.hidden { display: block; visibility: hidden; }
 
 /* 自动抽人读秒覆盖层 */
 .display__countdown {
@@ -484,16 +507,21 @@ input.weui-input[type="number"] { -moz-appearance: textfield; }
 @keyframes pop { 0% { transform: scale(0.96); opacity: .6; } 60% { transform: scale(1.06); opacity: 1; } 100% { transform: scale(1); } }
 .pop { animation: pop .36s cubic-bezier(.2,.9,.2,1); }
 
+/* 遵循系统“减少动效”偏好 */
+@media (prefers-reduced-motion: reduce) {
+	.rolling .display__number { animation: none !important; }
+	.pop { animation: none !important; }
+	.weui-mask .sheet { transition: none !important; }
+}
+
 
 /* 自适应 */
 @media (max-width: 640px) {
 	.range-cells { grid-template-columns: 1fr !important; }
 	.controls { grid-template-columns: 1fr; }
 	.display { padding: 20px 10px 14px; border-radius: 14px; }
-	/* 竖屏下用高度驱动字号，充分利用垂直空间（JS 会在此基础上再放大） */
-	.display__number { font-size: clamp(120px, 28vh, 520px); min-height: 1.05em; }
-	/* 支持稳定视口单位时进一步占满（不被地址栏影响） */
-	.display__number { font-size: clamp(120px, 28svh, 520px); }
+	/* 用 vmin 按较小边缩放，避免窗口越窄越显得更大 */
+	.display__number { font-size: clamp(124px, 20vmin, 520px); min-height: 1.05em; }
 	/* 小屏使用低幅动画，进一步减少视觉抖动 */
 	@keyframes rollSm {
 		0% { transform: translateY(0) scale(1); filter: blur(0); }
@@ -501,9 +529,37 @@ input.weui-input[type="number"] { -moz-appearance: textfield; }
 		100% { transform: translateY(0) scale(1); filter: blur(0); }
 	}
 	.rolling .display__number { animation: rollSm .26s ease-in-out infinite; }
-	/* 头部与卡片在极小屏幕收紧 */
-	.app__header { padding: 12px 14px; }
+	/* 头部与卡片在极小屏幕收紧，且两侧同宽并考虑安全区 */
+	.app__header {
+		padding-top: 12px;
+		padding-bottom: 12px;
+		padding-left: calc(14px + env(safe-area-inset-left, 0px));
+		padding-right: calc(14px + env(safe-area-inset-right, 0px));
+	}
 	.card { padding: 12px; border-radius: 12px; }
+}
+
+/* 平板优化（横竖屏 iPad/Android 介于手机与桌面之间） */
+@media (min-width: 641px) and (max-width: 1023px) {
+	:root { --page-padding-x: 20px; }
+	.app__main { max-width: 900px; gap: 18px; }
+	/* 输入行三等分在平板上容易拥挤，改为两列 */
+	.range-cells { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+	/* 让显示区更高，数字不过大不溢出 */
+	.display { min-height: clamp(260px, 36vh, 520px); }
+	.display__number { font-size: clamp(132px, 20vmin, 560px); }
+	.display__countdown { font-size: clamp(96px, 16vmin, 520px); }
+	/* 底部操作按钮更集中 */
+	.controls { grid-template-columns: 1fr; }
+}
+
+/* 极小高度（横屏或全面屏地址栏占位）时，进一步收紧字号与边距 */
+@media (max-height: 520px) {
+	.app__header { padding-top: 8px; padding-bottom: 8px; }
+	.card { padding: 10px; }
+	.display { padding: 16px 10px 10px; border-radius: 10px; }
+	.display__number { font-size: clamp(64px, 16vmin, 420px); }
+	.display__countdown { font-size: clamp(48px, 15vmin, 420px); }
 }
 
 /* 大屏优化与居中显示 */
@@ -523,7 +579,7 @@ input.weui-input[type="number"] { -moz-appearance: textfield; }
 	/* 拉长显示区高度，便于放大数字 */
 	.display { min-height: clamp(320px, 42vh, 720px); }
 	/* 放大数字与读秒以适配远距离观看 */
-	.display__number { font-size: clamp(140px, 22vmin, 1200px); }
+	.display__number { font-size: clamp(160px, 26vmin, 1200px); }
 	.display__countdown { font-size: clamp(110px, 20vmin, 1100px); }
 }
 
@@ -574,7 +630,16 @@ input[type="range"]#inputAutoSeconds:active::-webkit-slider-thumb { border-color
 }
 .theme-dark .rc-input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px var(--ring); }
 
-.range-cells { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: stretch; }
+.range-cells {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 12px;
+	align-items: stretch;
+}
+/* 自动断行：每个项目至少 260px，不够则自动换到下一行 */
+@media (min-width: 480px) {
+	.range-cells { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+}
 .range-cells .weui-cells_form .weui-cell_active { padding: 12px; }
 .range-cells .weui-cells { margin-top: 0; background: var(--card); border-radius: 12px; box-shadow: var(--shadow); border: 1px solid rgba(16,185,129,0.22); }
 .range-cells .weui-cell { align-items: center; }

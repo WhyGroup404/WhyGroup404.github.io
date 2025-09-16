@@ -114,82 +114,77 @@
 	/** 自适应字号：根据容器可用空间自适应显示学号 **/
 	const isCountdownVisible = () => !!displayCountdown && !displayCountdown.classList.contains('hidden');
 	const fitDisplayNumber = () => {
-		if (!displayNumber || !displayBox || isCountdownVisible() || isRolling) return;
-		// 计算可用宽高（预留一点内边距与标题/姓名空间）
-		const containerWidth = Math.max(0, displayBox.clientWidth - 24);
-		let containerHeight = displayBox.clientHeight;
-		const labelH = displayLabel ? displayLabel.offsetHeight : 0;
-		const nameVisible = displayName && !displayName.classList.contains('hidden') && displayName.textContent !== '—';
-		const nameH = nameVisible ? displayName.offsetHeight : 0;
-		// 预留顶部/底部内边距与阴影空间
-		containerHeight = Math.max(0, containerHeight - labelH - nameH - 36);
-
-		if (containerWidth <= 0 || containerHeight <= 0) return;
-
-		const maxPx = 2000; // 上限保护更高，允许竖屏更大
-		const minPx = window.innerWidth <= 640 ? 96 : 48; // 小屏下进一步提高下限
-		let lo = minPx, hi = maxPx;
-		// 先重置为中间值以减少跳动影响测量
-		displayNumber.style.fontSize = '';
-		// 二分查找最大的可用字号
-		while (lo < hi) {
-			const mid = Math.floor((lo + hi + 1) / 2);
-			displayNumber.style.fontSize = mid + 'px';
-			const fits = displayNumber.scrollWidth <= containerWidth && displayNumber.scrollHeight <= containerHeight;
-			if (fits) lo = mid; else hi = mid - 1;
-		}
-		displayNumber.style.fontSize = lo + 'px';
+		if (!displayNumber || !displayBox) return;
+		if (isCountdownVisible()) return;
+		const ensureStableNumberWidth = () => {
+			const clampSafe = clampRange(Number(inputMin?.value), Number(inputMax?.value));
+			const a = Math.abs(clampSafe[0]);
+			const b = Math.abs(clampSafe[1]);
+			const absMax = Math.max(a, b, 0);
+			const digits = String(Math.floor(absMax || 0)).length || 1;
+			const hasNegative = (Number(inputMin?.value) || 0) < 0;
+			// 采用更宽的数字“8”进行测量，获得上限宽度
+			const sample = (hasNegative ? '-' : '') + '8'.repeat(Math.max(1, digits));
+			const meas = document.createElement('span');
+			meas.className = displayNumber.className;
+			meas.style.position = 'absolute';
+			meas.style.visibility = 'hidden';
+			meas.style.whiteSpace = 'nowrap';
+			meas.style.left = '-99999px';
+			meas.textContent = sample;
+			document.body.appendChild(meas);
+			const widthPx = Math.ceil(meas.getBoundingClientRect().width);
+			meas.remove();
+			displayNumber.style.setProperty('--number-min-width', widthPx + 'px');
+			displayNumber.style.minWidth = widthPx + 'px';
+			displayNumber.style.width = widthPx + 'px'; // 固定宽度，确保完全不位移
+		};
+		ensureStableNumberWidth();
 	};
 
 	/** 在滚动过程中锁定显示容器高度，避免小屏布局抖动 */
 	const lockDisplayBoxHeight = () => {
 		if (!displayBox) return;
-		const rect = displayBox.getBoundingClientRect();
-		const h = Math.ceil(fixedDisplayHeight > 0 ? fixedDisplayHeight : rect.height);
-		const w = Math.ceil(rect.width);
-		if (h > 0) {
-			displayBox.style.height = h + 'px';
-			displayBox.style.minHeight = h + 'px';
-			// 小屏设备同时锁定宽度，避免地址栏/滚动条变化导致抖动
-			if (window.innerWidth <= 420 && w > 0) {
-				displayBox.style.width = w + 'px';
-			}
-			displayBox.style.willChange = 'height,width';
+		if (fixedDisplayHeight > 0) {
+			displayBox.style.minHeight = fixedDisplayHeight + 'px';
 		}
 	};
 
 	const setFixedDisplayHeight = () => {
 		if (!displayBox) return;
 		const rect = displayBox.getBoundingClientRect();
-		const h = Math.ceil(rect.height);
-		if (h > 0) fixedDisplayHeight = Math.max(fixedDisplayHeight, h);
+		fixedDisplayHeight = Math.max(0, Math.ceil(rect.height));
 		lockDisplayBoxHeight();
 	};
 
 	const unlockDisplayBoxHeight = () => {
 		if (!displayBox) return;
-		displayBox.style.height = '';
 		displayBox.style.minHeight = '';
-		displayBox.style.width = '';
-		displayBox.style.willChange = '';
+		fixedDisplayHeight = 0;
+	};
+
+	/** 动态 vh 兼容：把真实可视高度（除去地址栏/系统条）写入 CSS 变量 --vh */
+	const setDynamicVhVar = () => {
+		const vh = window.innerHeight * 0.01;
+		document.documentElement.style.setProperty('--vh', vh + 'px');
+	};
+
+	/**
+	 * 依据视口高度动态限制显示区高度，确保页面在任意设备上完整可见
+	 * 计算方式：可视高度 - 显示区到视口顶部的距离 - 下方控件/页脚高度 - 安全间距
+	 * 注意：滚动进行中不调整，避免抖动
+	 */
+	const adjustDisplayBoxToViewport = () => {
+		if (!displayBox) return;
+		if (isRolling) return;
+		setFixedDisplayHeight();
 	};
 
 	// 重新计算并锁定显示框高度（用于窗口变化后保持前后一致）
 	const refreshAndLockDisplayBoxHeight = () => {
-		if (!displayBox) return;
-		// 先释放，再按当前内容高度重新锁定
-		const prevWill = displayBox.style.willChange;
 		unlockDisplayBoxHeight();
-		// 等待一帧，让内容尺寸稳定
-		requestAnimationFrame(() => {
-			const rect = displayBox.getBoundingClientRect();
-			const h = Math.ceil(rect.height);
-			if (h > 0) {
-				displayBox.style.height = h + 'px';
-				displayBox.style.minHeight = h + 'px';
-				displayBox.style.willChange = prevWill || 'height,width';
-			}
-		});
+		setFixedDisplayHeight();
+		fitDisplayNumber();
 	};
 
 	/** 班级配置：工具与持久化 **/
@@ -1357,15 +1352,20 @@
 		const p = (Number(inputAutoSeconds.value) - 1) / 9 * 100;
 		inputAutoSeconds.style.setProperty('--_val', p + '%');
 	}
-	// 监听尺寸变化，保持字号自适应与容器高度一致
-	window.addEventListener('resize', () => requestAnimationFrame(fitDisplayNumber));
-	window.addEventListener('resize', () => refreshAndLockDisplayBoxHeight());
-	if (window.ResizeObserver && displayBox) {
-		try {
-			const ro = new ResizeObserver(() => { requestAnimationFrame(fitDisplayNumber); refreshAndLockDisplayBoxHeight(); });
-			ro.observe(displayBox);
-		} catch (_) {}
-	}
+	// 初始自适应与高度锁定
+	setDynamicVhVar();
+	refreshAndLockDisplayBoxHeight();
+	fitDisplayNumber();
+	// 监听窗口/方向变化
+	window.addEventListener('resize', () => {
+		setDynamicVhVar();
+		refreshAndLockDisplayBoxHeight();
+	}, { passive: true });
+	window.addEventListener('orientationchange', () => {
+		setTimeout(() => { setDynamicVhVar(); refreshAndLockDisplayBoxHeight(); }, 60);
+	});
+	// 输入范围变化时，稳定数字最小宽度
+	[inputMin, inputMax].forEach((el) => el?.addEventListener('input', () => requestAnimationFrame(fitDisplayNumber)));
 
 	// 放开最小/最大输入：允许任意字符，解析时再校验
 })();
