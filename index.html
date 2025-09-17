@@ -31,7 +31,15 @@
 <body data-weui-theme="light">
     <div id="appLoader" class="loader" aria-live="polite" aria-busy="true">
         <div class="loader__spinner" role="status" aria-label="正在加载"></div>
-        <div class="loader__text">正在加载，请稍候…</div>
+        <div class="loader__text"><span id="loaderStatus">正在加载，请稍候…</span></div>
+        <div class="loader__progress">
+            <div class="loader__bar"><div id="loaderBarInner" class="loader__bar-inner" style="width:0%"></div></div>
+            <div class="loader__meta">
+                <span id="loaderFile">-</span>
+                <span id="loaderPct">0%</span>
+            </div>
+        </div>
+        <button id="btnForceStart" class="weui-btn weui-btn_mini weui-btn_default" style="margin-top:8px;">强制进入</button>
     </div>
     <div class="app hidden-onload">
         <header class="app__header">
@@ -347,24 +355,74 @@
     </div>
     <script>
         (function(){
+            var loader = document.getElementById('appLoader');
+            var statusEl = document.getElementById('loaderStatus');
+            var fileEl = document.getElementById('loaderFile');
+            var pctEl = document.getElementById('loaderPct');
+            var barInner = document.getElementById('loaderBarInner');
+            var btnForce = document.getElementById('btnForceStart');
+
             function showApp(){
                 var app = document.querySelector('.app');
-                var loader = document.getElementById('appLoader');
                 if(app) app.classList.remove('hidden-onload');
                 if(loader && loader.parentNode) loader.parentNode.removeChild(loader);
             }
+
             function fontsReady(){
                 var fonts = document.fonts;
                 if(fonts && fonts.ready){ return fonts.ready.catch(function(){}); }
                 return Promise.resolve();
             }
-            Promise.all([
-                new Promise(function(resolve){
-                    if(document.readyState === 'complete') resolve();
-                    else window.addEventListener('load', function(){ resolve(); }, { once: true });
-                }),
-                fontsReady()
-            ]).then(showApp);
+
+            function setProgress(name, loaded, total){
+                var pct = total > 0 ? Math.round(loaded / total * 100) : (document.readyState === 'complete' ? 100 : 0);
+                if (fileEl) fileEl.textContent = name || '-';
+                if (pctEl) pctEl.textContent = pct + '%';
+                if (barInner) barInner.style.width = pct + '%';
+            }
+
+            btnForce && btnForce.addEventListener('click', function(){ showApp(); });
+
+            // Track external CSS/JS resources
+            var res = [];
+            try {
+                var links = Array.prototype.slice.call(document.querySelectorAll('link[rel="stylesheet"][href]'));
+                var scripts = Array.prototype.slice.call(document.querySelectorAll('script[defer][src]'));
+                links.forEach(function(el){ res.push({ el: el, url: el.getAttribute('href') }); });
+                scripts.forEach(function(el){ res.push({ el: el, url: el.getAttribute('src') }); });
+            } catch (e) {}
+
+            var total = res.length;
+            var loaded = 0;
+            if (total === 0) setProgress('-', 1, 1);
+
+            res.forEach(function(item){
+                var done = false;
+                function mark(){ if (done) return; done = true; loaded++; setProgress(item.url, loaded, total); if (loaded >= total) onAllLoaded(); }
+                item.el.addEventListener('load', mark);
+                item.el.addEventListener('error', mark);
+                // If already complete (some browsers), mark in next tick
+                setTimeout(function(){
+                    // Heuristic: CSS with sheet present, or script with readyState === 'complete'
+                    try {
+                        if ((item.el.tagName === 'LINK' && item.el.sheet) || (item.el.tagName === 'SCRIPT' && (item.el.readyState === 'complete'))){ mark(); }
+                    } catch (_) {}
+                }, 0);
+            });
+
+            function onAllLoaded(){
+                statusEl && (statusEl.textContent = '初始化字体…');
+                fontsReady().then(function(){ statusEl && (statusEl.textContent = '就绪'); setProgress('完成', 1, 1); }).then(function(){
+                    // 若页面已完全加载或用户强制，则展示
+                    if (document.readyState === 'complete') showApp();
+                    else window.addEventListener('load', function(){ showApp(); }, { once: true });
+                });
+            }
+
+            if (document.readyState === 'complete') { setProgress('完成', 1, 1); showApp(); return; }
+
+            // 兜底：即便资源事件缺失，onload 时也会显示
+            window.addEventListener('load', function(){ setProgress('完成', total, total); onAllLoaded(); }, { once: true });
         })();
     </script>
 

@@ -77,6 +77,12 @@ html, body {
 .loader__text { font-weight: 700; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* 增加加载进度与文件名显示 */
+.loader__progress { width: min(520px, 86vw); display: grid; gap: 6px; }
+.loader__bar { width: 100%; height: 8px; background: rgba(16,185,129,0.14); border-radius: 999px; overflow: hidden; }
+.loader__bar-inner { height: 100%; background: var(--brand); border-radius: 999px; width: 0%; transition: width .2s ease; }
+.loader__meta { display: flex; justify-content: space-between; color: var(--muted); font-weight: 600; }
+
 /* 选中文本的背景色设为绿色系 */
 ::selection { background: rgba(16,185,129,0.35); color: var(--brand-ink); }
 ::-moz-selection { background: rgba(16,185,129,0.35); color: var(--brand-ink); }
