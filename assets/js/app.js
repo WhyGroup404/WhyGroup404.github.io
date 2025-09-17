@@ -6,20 +6,14 @@
 	const inputMin = document.getElementById('inputMin');
 	const inputMax = document.getElementById('inputMax');
 	const inputExclude = document.getElementById('inputExclude');
-	const btnStart = document.getElementById('btnStart');
-	const btnStop = document.getElementById('btnStop');
 	// 第二组按钮（底部）
 	const startButtons = Array.from(document.querySelectorAll('.js-start'));
 	const stopButtons = Array.from(document.querySelectorAll('.js-stop'));
-	const btnReset = document.getElementById('btnReset');
 	const displayNumber = document.getElementById('displayNumber');
 	const displayName = document.getElementById('displayName');
 	const displayCountdown = document.getElementById('displayCountdown');
 	const displayLabel = document.getElementById('displayLabel');
 	const displayBox = document.querySelector('.display');
-	const historyList = document.getElementById('historyList');
-	const btnClearHistory = document.getElementById('btnClearHistory');
-	const btnUndo = document.getElementById('btnUndo');
 	const btnOpenSettings = document.getElementById('btnOpenSettings');
 	const settingsSheet = document.getElementById('settingsSheet');
 	const btnSettingsCancel = document.getElementById('btnSettingsCancel');
@@ -31,17 +25,7 @@
 	const textareaRoster = document.getElementById('textareaRoster');
 	const btnToggleTheme = document.getElementById('btnToggleTheme');
 	const btnAuto5s = document.getElementById('btnAuto5s');
-	const btnWhatsNew = document.getElementById('btnWhatsNew');
-	const whatsNewSheet = document.getElementById('whatsNewSheet');
-	const btnWhatsNewClose = document.getElementById('btnWhatsNewClose');
-	const btnWhatsNewOk = document.getElementById('btnWhatsNewOk');
-	// 顶部横幅
-	const topBanner = document.getElementById('topBanner');
-	const topBannerText = document.getElementById('topBannerText');
-	const topBannerClose = document.getElementById('topBannerClose');
-	const btnShowBlueBanner = null;
-	const btnShowRedBanner = null;
-	const headerEl = document.querySelector('.app__header');
+	// 简化：新功能弹窗与顶部横幅移至独立模块
 	// 新增设置控件
 	const switchShowRangeBar = document.getElementById('switchShowRangeBar');
 	const rangeBar = document.getElementById('rangeBar');
@@ -87,6 +71,7 @@
 	const btnProfileExport = document.getElementById('btnProfileExport');
 	const btnProfileImport = document.getElementById('btnProfileImport');
 	const inputImportProfile = document.getElementById('inputImportProfile');
+	const btnOpenCore = document.getElementById('btnOpenCore');
 
 	/** 状态 **/
 	const STORAGE_KEY = 'rollcall:v1';
@@ -115,6 +100,7 @@
 	const isCountdownVisible = () => !!displayCountdown && !displayCountdown.classList.contains('hidden');
 	const fitDisplayNumber = () => {
 		if (!displayNumber || !displayBox) return;
+		if (displayNumber.classList.contains('is-placeholder')) return; // 占位提示时无需计算宽度
 		if (isCountdownVisible()) return;
 		const ensureStableNumberWidth = () => {
 			const clampSafe = clampRange(Number(inputMin?.value), Number(inputMax?.value));
@@ -250,49 +236,11 @@
 		if (hasWeuiTopTips) window.weui.topTips(String(msg), 2000);
 		else alert(String(msg));
 	};
-	const clampRange = (min, max) => {
-		// 对任意输入做健壮解析，只提取首个整数，失败则给默认值
-		const parseFirstInt = (value, fallback) => {
-			if (Number.isFinite(value)) return Math.floor(value);
-			const s = String(value ?? '').match(/-?\d+/);
-			return s ? Math.floor(Number(s[0])) : fallback;
-		};
-		const a = parseFirstInt(min, 1);
-		const b = parseFirstInt(max, 50);
-		if (!Number.isFinite(a) || !Number.isFinite(b)) return [1, 50];
-		if (a > b) return [b, a];
-		return [a, b];
-	};
+	const clampRange = window.Utils.clampRange;
 
-	const parseExclude = (text) => {
-		if (!text) return new Set();
-		// 将中文逗号等分隔符统一转换为英文逗号，再按非数字/连字符切分
-		const normalized = String(text).replace(/[，、；;\s]+/g, ',').replace(/,+/g, ',');
-		return new Set(
-			normalized
-				.split(/[^-\d]+/)
-				.map((s) => s.trim())
-				.filter(Boolean)
-				.map((n) => Number(n))
-				.filter((n) => Number.isFinite(n))
-		);
-	};
+	const parseExclude = window.Utils.parseExclude;
 
-	const parseRoster = (raw) => {
-		const map = new Map();
-		if (!raw) return map;
-		raw
-			.split(/\n+/)
-			.map((line) => line.trim())
-			.filter(Boolean)
-			.forEach((line) => {
-				const m = line.match(/^(\-?\d+)\s+(.+)$/);
-				if (m) {
-					map.set(Number(m[1]), m[2].trim());
-				}
-			});
-		return map;
-	};
+	const parseRoster = window.Roster.parseRoster;
 
 	const sampleInt = (min, max, excludeSet, noRepeat) => {
 		// 先判断当前范围是否存在正权重学号
@@ -363,12 +311,19 @@
 		return candidates[candidates.length - 1];
 	};
 
+	// 历史 UI 已去除，仅保留数据结构即可
 	const renderHistory = () => {};
 
 	const updateDisplay = (n) => {
 		// 为减少测量抖动，姓名先隐藏（CSS 仍保留空间）
 		displayName?.classList.add('hidden');
-		displayNumber.textContent = n != null ? String(n) : '—';
+		if (n != null) {
+			displayNumber.textContent = String(n);
+			displayNumber.classList.remove('is-placeholder');
+		} else {
+			displayNumber.textContent = '填写必要设置后开始！';
+			displayNumber.classList.add('is-placeholder');
+		}
 		const name = n != null ? rosterMap.get(n) : '';
 		if (name) {
 			displayName.textContent = name;
@@ -716,17 +671,7 @@
 		document.body.style.overflow = '';
 	};
 
-	const openWhatsNew = () => {
-		whatsNewSheet.classList.remove('hidden');
-		requestAnimationFrame(() => whatsNewSheet.classList.add('is-open'));
-		document.body.style.overflow = 'hidden';
-	};
-
-	const closeWhatsNew = () => {
-		whatsNewSheet.classList.remove('is-open');
-		setTimeout(() => whatsNewSheet.classList.add('hidden'), 280);
-		document.body.style.overflow = '';
-	};
+	// 新功能弹窗逻辑已抽离到 modules/whatsnew.js
 
 	const openRoster = () => {
 		if (!rosterSheet) return;
@@ -847,9 +792,7 @@
 		requestAnimationFrame(fitDisplayNumber);
 
 		// 彩带效果
-		try {
-			launchConfetti();
-		} catch (_) {}
+	try { window.launchConfetti && window.launchConfetti(); } catch (_) {}
 		if (noRepeat) pickedSet.add(n);
 		const item = {
 			number: n,
@@ -893,65 +836,7 @@
 	};
 
 	/** 自定义名单：辅助工具 **/
-	const parseRosterLines = (raw) => {
-		const lines = String(raw || '')
-			.replace(/[\u3000\t]+/g, ' ') // 全角空格/制表符 -> 空格
-			.replace(/[\r]+/g, '')
-			.split(/\n/);
-		const entries = [];
-		const invalid = [];
-		for (let i = 0; i < lines.length; i++) {
-			const line = lines[i].trim();
-			if (!line) continue;
-			const m = line.match(/^(\-?\d+)\s+(.+)$/);
-			if (m) {
-				const id = Math.floor(Number(m[1]));
-				const name = m[2].replace(/\s+/g, ' ').trim();
-				entries.push({ id, name });
-			} else {
-				invalid.push({ index: i, text: line });
-			}
-		}
-		return { entries, invalid };
-	};
-
-	const stringifyRoster = (entries) => entries.map((e) => `${e.id} ${e.name}`).join('\n');
-
-	const normalizeRoster = (raw) => {
-		const { entries } = parseRosterLines(raw);
-		return stringifyRoster(entries);
-	};
-
-	const sortRosterById = (raw) => {
-		const { entries } = parseRosterLines(raw);
-		entries.sort((a, b) => a.id - b.id || a.name.localeCompare(b.name, 'zh-Hans-CN'));
-		return stringifyRoster(entries);
-	};
-
-	const sortRosterByName = (raw) => {
-		const { entries } = parseRosterLines(raw);
-		entries.sort((a, b) => a.name.localeCompare(b.name, 'zh-Hans-CN', { numeric: true }) || a.id - b.id);
-		return stringifyRoster(entries);
-	};
-
-	const dedupeRosterById = (raw) => {
-		const { entries } = parseRosterLines(raw);
-		const seen = new Set();
-		const result = [];
-		for (const e of entries) {
-			if (seen.has(e.id)) continue; // 保留第一次出现
-			seen.add(e.id);
-			result.push(e);
-		}
-		return stringifyRoster(result);
-	};
-
-	const trimRosterEmptyLines = (raw) => String(raw || '')
-		.replace(/[\r]+/g, '')
-		.split(/\n/)
-		.map((s) => s.trim())
-		.filter(Boolean)
-		.join('\n');
+	const { parseRosterLines, normalizeRoster, sortRosterById, sortRosterByName, dedupeRosterById, trimRosterEmptyLines } = window.Roster;
 
 	const updateRosterStats = () => {
 		if (!rosterStats || !textareaRoster) return;
@@ -1040,40 +925,11 @@
 	};
 
 	/** 顶部横幅 API **/
-	const showBanner = (message, color = 'blue', durationMs = 3000, options = {}) => {
-		if (!topBanner || !topBannerText) return;
-		topBanner.classList.remove('banner--blue', 'banner--red');
-		topBanner.classList.add(color === 'red' ? 'banner--red' : 'banner--blue');
-		topBannerText.textContent = String(message || '');
-		topBanner.style.width = 'auto';
-		// 定位到页眉下方
-		try {
-			const rect = headerEl ? headerEl.getBoundingClientRect() : { bottom: 0 };
-			const top = Math.max(0, rect.bottom + 8 + (window.scrollY || window.pageYOffset || 0));
-			topBanner.style.top = top + 'px';
-		} catch (_) {}
-		// 关闭按钮可选（默认显示）
-		const showClose = options && Object.prototype.hasOwnProperty.call(options, 'showClose') ? !!options.showClose : true;
-		if (topBannerClose) topBannerClose.style.display = showClose ? '' : 'none';
-		topBanner.classList.remove('hidden');
-		requestAnimationFrame(() => topBanner.classList.add('is-show'));
-		if (Number.isFinite(durationMs) && durationMs > 0) {
-			setTimeout(() => hideBanner(), durationMs);
-		}
-	};
-
-	const hideBanner = () => {
-		if (!topBanner) return;
-		topBanner.classList.remove('is-show');
-		setTimeout(() => topBanner.classList.add('hidden'), 300);
-	};
+	// 顶部横幅逻辑已抽离到 modules/banner.js
 
 	/** 事件绑定 **/
-	btnStart?.addEventListener('click', startRoll);
-	btnStop?.addEventListener('click', stopRoll);
 	startButtons.forEach(b => b.addEventListener('click', startRoll));
 	stopButtons.forEach(b => b.addEventListener('click', stopRoll));
-	btnReset?.addEventListener('click', resetAll);
 	// 历史已移除（保留逻辑以便将来扩展，但不渲染）
 	btnOpenSettings?.addEventListener('click', openSettings);
 	btnSettingsCancel?.addEventListener('click', closeSettings);
@@ -1084,12 +940,7 @@
 		closeSettings();
 	});
 	btnToggleTheme?.addEventListener('click', toggleTheme);
-	btnWhatsNew?.addEventListener('click', openWhatsNew);
-	btnWhatsNewClose?.addEventListener('click', closeWhatsNew);
-	btnWhatsNewOk?.addEventListener('click', closeWhatsNew);
-	// 测试按钮（后期可删）
-	// 测试按钮已移除
-	topBannerClose?.addEventListener('click', () => hideBanner());
+	// 新功能弹窗和横幅事件由对应模块内部绑定
 
 	// 当窗口尺寸或滚动变化时，若横幅可见，保持其紧贴页眉下方
 	const syncBannerPosition = () => {
@@ -1206,6 +1057,15 @@
 		const file = e.target.files && e.target.files[0];
 		if (file) importProfileFromFile(file);
 		e.target.value = '';
+	});
+
+	// 进入 Core 模式（新标签）
+	btnOpenCore?.addEventListener('click', () => {
+		try {
+			window.open('Core/terminal.html', '_blank', 'noopener');
+		} catch (_) {
+			location.href = 'Core/terminal.html';
+		}
 	});
 
 	switchEnableWeights?.addEventListener('change', () => {
@@ -1370,34 +1230,4 @@
 	// 放开最小/最大输入：允许任意字符，解析时再校验
 })();
 
-// 简易彩带实现（无第三方库）
-function launchConfetti() {
-	const DURATION = 1600;
-	const COUNT = 28;
-	const end = Date.now() + DURATION;
-	const colors = ['#34d399','#10b981','#22c55e','#f59e0b','#ef4444','#3b82f6'];
-	const container = document.body;
-	for (let i = 0; i < COUNT; i++) {
-		const conf = document.createElement('i');
-		conf.style.position = 'fixed';
-		conf.style.top = '-12px';
-		conf.style.left = (Math.random() * 100) + 'vw';
-		conf.style.width = '8px';
-		conf.style.height = 12 + Math.random() * 10 + 'px';
-		conf.style.background = colors[i % colors.length];
-		conf.style.opacity = '0.9';
-		conf.style.transform = `rotate(${Math.random()*360}deg)`;
-		conf.style.pointerEvents = 'none';
-		conf.style.borderRadius = '2px';
-		container.appendChild(conf);
-		const translateY = window.innerHeight + 40 + Math.random() * 120;
-		const translateX = (Math.random() * 2 - 1) * 120;
-		conf.animate([
-			{ transform: `translate(0, 0) rotate(0deg)` },
-			{ transform: `translate(${translateX}px, ${translateY}px) rotate(${720*Math.random()}deg)` }
-		], { duration: DURATION + Math.random()*600, easing: 'cubic-bezier(.22,.61,.36,1)', fill: 'forwards' });
-		setTimeout(() => conf.remove(), DURATION + 800);
-	}
-}
-
-
+// 彩带已抽离到 confetti.js

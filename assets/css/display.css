@@ -1,0 +1,15 @@
+/* 与显示区相关的样式拆分 */
+.display__number.is-placeholder {
+	font-size: 20px;
+	font-weight: 700;
+	letter-spacing: 0;
+	color: var(--muted);
+	text-shadow: none;
+	white-space: normal;
+	line-height: 1.6;
+	min-height: auto;
+	max-width: 100%;
+	min-width: 0;
+}
+
+

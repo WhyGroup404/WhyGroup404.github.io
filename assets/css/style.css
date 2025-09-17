@@ -346,6 +346,9 @@ input.weui-input[type="number"] { -moz-appearance: textfield; }
 	margin: 0 auto; /* 视觉水平居中 */
 }
 
+/* 占位提示样式：小字号、可换行、不投影 */
+/* 占位样式已拆分到 assets/css/display.css */
+
 .display__name {
 	margin-top: 4px;
 	font-size: 18px;
@@ -372,7 +375,7 @@ input.weui-input[type="number"] { -moz-appearance: textfield; }
 }
 
 /* 原历史区域隐藏，页面更紧凑 */
-.history { display: none; }
+/* 历史 UI 已移除 */
 
 .history .weui-cell { align-items: center; }
 .history__num {
