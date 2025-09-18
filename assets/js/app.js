@@ -72,6 +72,17 @@
 	const btnProfileImport = document.getElementById('btnProfileImport');
 	const inputImportProfile = document.getElementById('inputImportProfile');
 	const btnOpenCore = document.getElementById('btnOpenCore');
+  // 主题色设置
+  const btnOpenTheme = document.getElementById('btnOpenTheme');
+  const themeSheet = document.getElementById('themeSheet');
+  const btnThemeClose = document.getElementById('btnThemeClose');
+  const btnThemeCancel = document.getElementById('btnThemeCancel');
+  const btnThemeSave = document.getElementById('btnThemeSave');
+  const btnThemeReset = document.getElementById('btnThemeReset');
+  const btnThemeSaveCustom = document.getElementById('btnThemeSaveCustom');
+  const inputThemeColor = document.getElementById('inputThemeColor');
+  const themeSwatches = document.getElementById('themeSwatches');
+  const themeCustomColors = document.getElementById('themeCustomColors');
 
 	/** 状态 **/
 	const STORAGE_KEY = 'rollcall:v1';
@@ -348,6 +359,14 @@
 			picked: noRepeatExpire === 'session' ? [] : Array.from(pickedSet),
 			history: pickedStack,
 			themeDark: document.documentElement.classList.contains('theme-dark'),
+      // 记录当前主题色（十六进制）
+      themeColor: (function(){
+        try {
+          const c = getComputedStyle(document.documentElement).getPropertyValue('--brand').trim();
+          const hex = toHexColor(c);
+          return hex || (localStorage.getItem('rollcall:themeColor') || '');
+        } catch (_) { return localStorage.getItem('rollcall:themeColor') || ''; }
+      })(),
 			showRangeBar: switchShowRangeBar ? switchShowRangeBar.checked : true,
 			autoSeconds: inputAutoSeconds ? Number(inputAutoSeconds.value) : autoSeconds,
 			weightsEnabled: switchEnableWeights ? !!switchEnableWeights.checked : weightsEnabled,
@@ -387,6 +406,15 @@
 			} else {
 				document.body?.setAttribute('data-weui-theme', 'light');
 			}
+      // 应用主题色（优先使用配置文件中的主题色）
+      try {
+        if (s.themeColor) {
+          applyThemeColor(s.themeColor);
+        } else {
+          const savedTheme = localStorage.getItem('rollcall:themeColor');
+          if (savedTheme) applyThemeColor(savedTheme);
+        }
+      } catch (_) {}
 
 			// 新增设置：顶部范围栏显示与自动秒数
 			if (switchShowRangeBar && typeof s.showRangeBar === 'boolean') {
@@ -456,7 +484,7 @@
 				if (raw) base = JSON.parse(raw);
 			} catch (_) {}
 		}
-		if (!base) base = { min: 1, max: 50, exclude: '', noRepeat: true, animate: true, roster: '', picked: [], history: [], themeDark: document.documentElement.classList.contains('theme-dark'), showRangeBar: true, autoSeconds: 5, weightsEnabled: false, weightRules: [] };
+    if (!base) base = { min: 1, max: 50, exclude: '', noRepeat: true, animate: true, roster: '', picked: [], history: [], themeDark: document.documentElement.classList.contains('theme-dark'), themeColor: (function(){try {return toHexColor(getComputedStyle(document.documentElement).getPropertyValue('--brand')) || (localStorage.getItem('rollcall:themeColor')||'');} catch(_){return localStorage.getItem('rollcall:themeColor')||'';}})(), showRangeBar: true, autoSeconds: 5, weightsEnabled: false, weightRules: [] };
 		base.picked = [];
 		base.history = [];
 		try { localStorage.setItem(getStateKey(id), JSON.stringify(base)); } catch (_) {}
@@ -523,6 +551,8 @@
 				if (!Array.isArray(state.weightRules)) state.weightRules = [];
 				if (!Array.isArray(state.picked)) state.picked = [];
 				if (!Array.isArray(state.history)) state.history = [];
+				// 应用并保存主题色
+				try { if (state.themeColor) applyThemeColor(state.themeColor); } catch (_) {}
 				localStorage.setItem(getStateKey(id), JSON.stringify(state));
 				if (obj && obj.meta) localStorage.setItem(getMetaKey(id), JSON.stringify(obj.meta));
 				saveProfilesStructure();
@@ -624,9 +654,9 @@
 			weightsList.appendChild(makeWeightRow(id, percent, idx));
 		});
 		if (weightMap.size === 0) {
-			const empty = document.createElement('div');
-			empty.className = 'weui-cell';
-			empty.innerHTML = '<div class="weui-cell__bd" style="color:#5b776f;">暂无学号，点击“添加学号”开始配置</div>';
+            const empty = document.createElement('div');
+            empty.className = 'weui-cell';
+            empty.innerHTML = '<div class="weui-cell__bd" style="color:var(--muted);">暂无学号，点击“添加学号”开始配置</div>';
 			weightsList.appendChild(empty);
 		}
 	};
@@ -680,6 +710,84 @@
 		document.body.style.overflow = 'hidden';
 	};
 
+  // 主题色弹窗
+  const openTheme = () => {
+    if (!themeSheet) return;
+    themeSheet.classList.remove('hidden');
+    requestAnimationFrame(() => themeSheet.classList.add('is-open'));
+    document.body.style.overflow = 'hidden';
+    // 初始化颜色为当前 --brand
+    try {
+      const current = getComputedStyle(document.documentElement).getPropertyValue('--brand').trim();
+      if (current && inputThemeColor) inputThemeColor.value = toHexColor(current) || '#12b76a';
+    } catch (_) {}
+  };
+
+  const closeTheme = () => {
+    if (!themeSheet) return;
+    themeSheet.classList.remove('is-open');
+    setTimeout(() => themeSheet.classList.add('hidden'), 280);
+    document.body.style.overflow = '';
+  };
+
+  const toHexColor = (c) => {
+    // 支持 rgb(a) 或 #hex
+    c = String(c || '').trim();
+    if (/^#([\da-f]{3}|[\da-f]{6})$/i.test(c)) return c;
+    const m = c.match(/rgba?\((\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+    if (m) {
+      const r = Number(m[1])|0, g = Number(m[2])|0, b = Number(m[3])|0;
+      const hex = (n) => ('0' + n.toString(16)).slice(-2);
+      return `#${hex(r)}${hex(g)}${hex(b)}`;
+    }
+    return null;
+  };
+
+  const applyThemeColor = (hex) => {
+    if (!hex) return;
+    document.documentElement.style.setProperty('--brand', hex);
+    // 同步相关派生色（通过简易算法估算更深/更亮色）
+    try {
+      // 计算 brand-ink：降低亮度
+      const rgb = hex.replace('#','');
+      const r = parseInt(rgb.slice(0,2),16), g = parseInt(rgb.slice(2,4),16), b = parseInt(rgb.slice(4,6),16);
+      const dark = `#${[r,g,b].map(v=>('0'+Math.max(0, Math.floor(v*0.45)).toString(16)).slice(-2)).join('')}`;
+      document.documentElement.style.setProperty('--brand-ink', dark);
+      // ring 根据 brand 调整
+      document.documentElement.style.setProperty('--ring', hex + '55');
+      // brand-600 稍微变深，用于:active 等状态
+      const deep = `#${[r,g,b].map(v=>('0'+Math.max(0, Math.floor(v*0.7)).toString(16)).slice(-2)).join('')}`;
+      document.documentElement.style.setProperty('--brand-600', deep);
+      // 同步浏览器地址栏主题色
+      const meta = document.getElementById('metaThemeColor');
+      if (meta) meta.setAttribute('content', hex);
+    } catch (_) {}
+  };
+
+  const CUSTOM_COLORS_KEY = 'rollcall:themeCustomColors';
+  const loadCustomColors = () => {
+    try {
+      const raw = localStorage.getItem(CUSTOM_COLORS_KEY);
+      const list = raw ? JSON.parse(raw) : [];
+      if (Array.isArray(list) && themeCustomColors) {
+        themeCustomColors.innerHTML = list.map(c => `<button class="swatch" data-color="${c}" style="--c:${c}" title="${c}"></button>`).join('');
+      }
+    } catch (_) {}
+  };
+  const saveCustomColor = (hex) => {
+    try {
+      const raw = localStorage.getItem(CUSTOM_COLORS_KEY);
+      let list = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(list)) list = [];
+      if (!list.includes(hex)) {
+        list.unshift(hex);
+        // 最多保留 12 个
+        if (list.length > 12) list = list.slice(0, 12);
+        localStorage.setItem(CUSTOM_COLORS_KEY, JSON.stringify(list));
+      }
+    } catch (_) {}
+  };
+
 	const closeRoster = () => {
 		if (!rosterSheet) return;
 		rosterSheet.classList.remove('is-open');
@@ -722,8 +830,6 @@
 		isRolling = true;
 		// 先按未滚动状态记录并锁定固定高度，确保开始后不变小
 		setFixedDisplayHeight();
-		btnStart?.classList.add('hidden');
-		btnStop?.classList.remove('hidden');
 		startButtons.forEach(b => b.classList.add('hidden'));
 		stopButtons.forEach(b => b.classList.remove('hidden'));
 		document.querySelector('.app')?.classList.toggle('rolling', switchAnimate.checked);
@@ -741,8 +847,6 @@
 	const stopRoll = () => {
 		if (!isRolling) return;
 		isRolling = false;
-		btnStart?.classList.remove('hidden');
-		btnStop?.classList.add('hidden');
 		startButtons.forEach(b => b.classList.remove('hidden'));
 		stopButtons.forEach(b => b.classList.add('hidden'));
 		clearInterval(timerId);
@@ -916,7 +1020,7 @@
 
 		if (browserInfoEl) browserInfoEl.textContent = `${kernel || 'Unknown'} · ${os || 'Unknown OS'}`;
 		if (versionEl) {
-			versionEl.textContent = 'v1.0.0';
+			versionEl.textContent = 'v3.1.1';
 		}
 		if (copyrightEl) {
 			const year = new Date().getFullYear();
@@ -967,6 +1071,49 @@
 		saveState();
 	});
 	btnOpenWeights?.addEventListener('click', openWeights);
+  btnOpenTheme?.addEventListener('click', openTheme);
+  btnThemeClose?.addEventListener('click', closeTheme);
+  btnThemeCancel?.addEventListener('click', closeTheme);
+  btnThemeReset?.addEventListener('click', () => { if (inputThemeColor) inputThemeColor.value = '#12b76a'; });
+  inputThemeColor?.addEventListener('input', () => applyThemeColor(inputThemeColor.value));
+  themeSwatches?.addEventListener('click', (e) => {
+    const t = e.target;
+    if (t && t.classList && t.classList.contains('swatch')) {
+      const c = t.getAttribute('data-color');
+      if (inputThemeColor) inputThemeColor.value = c;
+      applyThemeColor(c);
+    }
+  });
+  // 右键自定义色块删除
+  themeSwatches?.addEventListener('contextmenu', (e) => {
+    const t = e.target;
+    if (t && t.classList && t.classList.contains('swatch') && themeCustomColors && themeCustomColors.contains(t)) {
+      e.preventDefault();
+      const c = t.getAttribute('data-color');
+      try {
+        const raw = localStorage.getItem(CUSTOM_COLORS_KEY);
+        let list = raw ? JSON.parse(raw) : [];
+        list = Array.isArray(list) ? list.filter(x => x !== c) : [];
+        localStorage.setItem(CUSTOM_COLORS_KEY, JSON.stringify(list));
+        loadCustomColors();
+      } catch (_) {}
+    }
+  });
+  btnThemeSaveCustom?.addEventListener('click', () => {
+    const color = inputThemeColor ? String(inputThemeColor.value || '').trim() : '';
+    if (!color) return;
+    saveCustomColor(color);
+    loadCustomColors();
+  });
+  btnThemeSave?.addEventListener('click', () => {
+    try {
+      const color = inputThemeColor ? String(inputThemeColor.value || '').trim() : '';
+      if (color) localStorage.setItem('rollcall:themeColor', color);
+    } catch (_) {}
+    // 保存到当前班级配置
+    try { saveState(); } catch (_) {}
+    closeTheme();
+  });
 	btnWeightsClose?.addEventListener('click', closeWeights);
 	btnWeightsCancel?.addEventListener('click', closeWeights);
 	btnWeightsSave?.addEventListener('click', () => {
@@ -1160,8 +1307,8 @@
 		applyRangeBarVisible();
 	});
 	inputAutoSeconds?.addEventListener('input', () => {
-		updateAutoSecondsUI();
-		// 更新背景进度条百分比
+    updateAutoSecondsUI();
+    // 更新背景进度条百分比
 		if (inputAutoSeconds) {
 			const p = (Number(inputAutoSeconds.value) - 1) / 9 * 100;
 			inputAutoSeconds.style.setProperty('--_val', p + '%');
@@ -1207,6 +1354,8 @@
 	updateAutoSecondsUI();
 	// 同步一次权重 UI
 	if (weightsEnabled && switchEnableWeights) switchEnableWeights.checked = true;
+  // 渲染自定义主题色
+  loadCustomColors();
 	// 初始化滑条背景
 	if (inputAutoSeconds) {
 		const p = (Number(inputAutoSeconds.value) - 1) / 9 * 100;

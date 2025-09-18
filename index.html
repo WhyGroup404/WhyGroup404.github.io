@@ -8,10 +8,7 @@
     <link rel="stylesheet" href="weui-master/dist/style/weui.min.css">
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="assets/css/display.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    
     <style>
         /* 轻量兜底，主样式在 assets/css/style.css */
         .hidden { display: none; }
@@ -20,13 +17,14 @@
     <script defer src="assets/js/roster.js"></script>
     <script defer src="assets/js/banner.js"></script>
     <script defer src="assets/js/whatsnew.js"></script>
+    
     <script defer src="assets/js/confetti.js"></script>
     <script defer src="assets/js/app.js"></script>
     <script>
         // 简单防抖，避免 iOS PWA 双击放大
         document.addEventListener('gesturestart', function (e) { e.preventDefault(); });
     </script>
-    <meta name="theme-color" content="#12b76a">
+    <meta name="theme-color" content="#12b76a" id="metaThemeColor">
 </head>
 <body data-weui-theme="light">
     <div id="appLoader" class="loader" aria-live="polite" aria-busy="true">
@@ -118,11 +116,11 @@
                 <span class="dot">·</span>
                 <span>浏览器：<span id="browserInfo">-</span></span>
                 <span class="dot">·</span>
-                <span>版本：v3.1.0</span>
+                <span>版本：v3.1.1</span>
                 <span class="dot">·</span>
                 <span>台州王浩哥集团有限公司 © 2025</span>
                 <span class="dot">·</span>
-                <span>赠送:詹珍怡及其所有朋友(请认准:<a href="https://zhanzhenyi.cn" target="_blank" style="color: darkgreen;">zhanzhenyi.cn</a>)欢迎推荐此网站！</span>
+                <span>赠送:詹珍怡及其所有朋友(请认准:<a href="https://zhanzhenyi.cn" target="_blank" style="color: var(--brand);">zhanzhenyi.cn</a>)欢迎推荐此网站！</span>
             </div>
         </footer>
     </div>
@@ -192,7 +190,7 @@
                     <div class="weui-cell__bd">
                         <label for="inputAutoSeconds" class="weui-label">自动抽人时长</label>
                         <input id="inputAutoSeconds" type="range" min="1" max="10" value="5" style="width:100%">
-                        <div style="margin-top:6px;color:#5b776f;">当前：<span id="autoSecondsPreview">5</span> 秒</div>
+                        <div style="margin-top:6px;color:var(--muted);">当前：<span id="autoSecondsPreview">5</span> 秒</div>
                     </div>
                 </div>
 
@@ -201,6 +199,18 @@
                     <div class="weui-cell__bd">自定义名单</div>
                     <div class="weui-cell__ft">
                         <button id="btnOpenRoster" class="weui-btn weui-btn_mini weui-btn_default btn-icon" title="打开">
+                            <img class="open-icon open-icon--light" src="assets/img/open/Open_Black.png" alt="" aria-hidden="true">
+                            <img class="open-icon open-icon--dark" src="assets/img/open/Open_White.png" alt="" aria-hidden="true">
+                            打开
+                        </button>
+                    </div>
+                </div>
+
+                <div class="weui-cells__title"><span class="title-with-icon"><img class="icon" src="assets/img/menu/Color.png" alt="" aria-hidden="true">主题色设置</span></div>
+                <div class="weui-cell">
+                    <div class="weui-cell__bd">设置全局主题色</div>
+                    <div class="weui-cell__ft">
+                        <button id="btnOpenTheme" class="weui-btn weui-btn_mini weui-btn_default btn-icon" title="打开">
                             <img class="open-icon open-icon--light" src="assets/img/open/Open_Black.png" alt="" aria-hidden="true">
                             <img class="open-icon open-icon--dark" src="assets/img/open/Open_White.png" alt="" aria-hidden="true">
                             打开
@@ -256,22 +266,13 @@
         <div class="sheet">
             <div class="sheet__header">新功能<button id="btnWhatsNewClose" class="sheet__close" aria-label="关闭">×</button></div>
             <div class="sheet__content">
-                <div class="weui-cells__title">当前版本：v3.1.0</div>
+                <div class="weui-cells__title">当前版本：v3.1.1</div>
                 <div class="weui-cells">
-                    <div class="weui-cell">优化：概率设置功能</div>
-                    <div class="weui-cell">优化：全面优化UI界面</div>
-                    <div class="weui-cell">新增：自定义名单更多设置</div>
-                    <div class="weui-cell">优化：设置页面视觉效果、功能优化，新增功能分类，更好用</div>
-                    <div class="weui-cell">新增：掩盖概率设置</div>
-                    <div class="weui-cell">修复：部分设备UI不适配导致部分UI挤在一起</div>
-                    <div class="weui-cell">新增：设置了概率的学号排除“不重复点到”设置</div>
-                    <div class="weui-cell">优化：自定义名单占位符改为清晰示例（每行：学号 空格 姓名）</div>
-                    <div class="weui-cell">新增：新字体，页面整体中文显示更美观</div>
-                    <div class="weui-cell">优化：输入框视觉与交互细节</div>
-                    <div class="weui-cell">新增：选中文本背景色更改为绿色，更符合主题色</div>
-                    <div class="weui-cell">新增：通知系统</div>
-                    <div class="weui-cell">新增：更强大的兼容系统</div>
-                    <div class="weui-cell">2025年9月16日  更新 感谢您的支持</div>
+                    <div class="weui-cell">新增：主题色设置（调色盘、预设、自定义预设保存）</div>
+                    <div class="weui-cell">新增：每个班级保存各自主题色，切换班级自动切换颜色</div>
+                    <div class="weui-cell">优化：深色模式整体提亮，边框/阴影/输入跟随主题联动</div>
+                    <div class="weui-cell">修复：若干小问题和视觉细节</div>
+                    <div class="weui-cell">2025年9月18日  更新 感谢您的支持</div>
                 </div>
             </div>
             <div class="sheet__footer">
@@ -286,7 +287,7 @@
             <div class="sheet__header">概率权重设置（按学号）<button id="btnWeightsClose" class="sheet__close" aria-label="关闭">×</button></div>
             <div class="sheet__content">
                 <div class="weui-cells__title">为单个学号设置抽中百分比（未设置者平均分配剩余百分比）。</div>
-                <div class="weui-cells__tips" style="margin:6px 0;color:#5b776f;">提示：当前范围与排除条件内的学号，已设置的百分比合计建议不超过 100%；超过时，将仅在已设置学号间按占比抽取。</div>
+                <div class="weui-cells__tips" style="margin:6px 0;color:var(--muted);">提示：当前范围与排除条件内的学号，已设置的百分比合计建议不超过 100%；超过时，将仅在已设置学号间按占比抽取。</div>
 
                 <label class="weui-cell weui-cell_switch">
                     <div class="weui-cell__bd">设置了概率的学号排除“不重复点到”设置(可以再次抽到)</div>
@@ -327,7 +328,7 @@
                     </div>
                     <div class="weui-cell">
                         <div class="weui-cell__bd">
-                            <div id="rosterStats" style="color:#5b776f;">共 0 行 · 合法 0 · 无效 0 · 重复 0</div>
+                            <div id="rosterStats" style="color:var(--muted);">共 0 行 · 合法 0 · 无效 0 · 重复 0</div>
                         </div>
                         <div class="weui-cell__ft" style="white-space: nowrap;">
                             <button id="btnRosterFormat" class="weui-btn weui-btn_mini weui-btn_default">格式化</button>
@@ -350,6 +351,45 @@
                 <button id="btnRosterCancel" class="weui-btn weui-btn_default">取消</button>
                 <button id="btnRosterClear" class="weui-btn weui-btn_warn">清空</button>
                 <button id="btnRosterSave" class="weui-btn weui-btn_primary">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主题色设置弹窗 -->
+    <div id="themeSheet" class="weui-mask hidden" role="dialog" aria-modal="true">
+        <div class="sheet">
+            <div class="sheet__header">主题色设置<button id="btnThemeClose" class="sheet__close" aria-label="关闭">×</button></div>
+            <div class="sheet__content">
+                <div class="weui-cells__title">选择一个主题色，或使用调色盘自定义。</div>
+                <div class="weui-cell">
+                    <div class="weui-cell__bd">
+                        <input id="inputThemeColor" type="color" value="#12b76a" style="width:52px;height:32px;border:0;padding:0;background:transparent;">
+                    </div>
+                    <div class="weui-cell__ft" style="white-space:nowrap;">
+                        <button id="btnThemeReset" class="weui-btn weui-btn_mini weui-btn_default">恢复默认</button>
+                        <button id="btnThemeSaveCustom" class="weui-btn weui-btn_mini weui-btn_default" style="margin-left:8px;">保存到预设</button>
+                    </div>
+                </div>
+                <div class="weui-cells__title">预设颜色</div>
+                <div class="weui-cell">
+                    <div class="weui-cell__bd">
+                        <div id="themeSwatches" class="swatches">
+                            <button class="swatch" data-color="#12b76a" style="--c:#12b76a" title="#12b76a"></button>
+                            <button class="swatch" data-color="#0ea5e9" style="--c:#0ea5e9" title="#0ea5e9"></button>
+                            <button class="swatch" data-color="#6366f1" style="--c:#6366f1" title="#6366f1"></button>
+                            <button class="swatch" data-color="#f59e0b" style="--c:#f59e0b" title="#f59e0b"></button>
+                            <button class="swatch" data-color="#ef4444" style="--c:#ef4444" title="#ef4444"></button>
+                            <button class="swatch" data-color="#06b6d4" style="--c:#06b6d4" title="#06b6d4"></button>
+                            <button class="swatch" data-color="#22c55e" style="--c:#22c55e" title="#22c55e"></button>
+                            <button class="swatch" data-color="#a855f7" style="--c:#a855f7" title="#a855f7"></button>
+                            <span id="themeCustomColors" style="display:contents;"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="sheet__footer">
+                <button id="btnThemeCancel" class="weui-btn weui-btn_default">取消</button>
+                <button id="btnThemeSave" class="weui-btn weui-btn_primary">保存</button>
             </div>
         </div>
     </div>

@@ -2,7 +2,15 @@
 window.launchConfetti = function launchConfetti(){
 	const DURATION = 1600;
 	const COUNT = 28;
-	const colors = ['#34d399','#10b981','#22c55e','#f59e0b','#ef4444','#3b82f6'];
+const colors = (function(){
+  // 以主题色为主，辅以几种相对中性的配色
+  try {
+    const brand = getComputedStyle(document.documentElement).getPropertyValue('--brand').trim() || '#12b76a';
+    return [brand, '#f59e0b', '#ef4444', '#0ea5e9', '#6366f1'];
+  } catch (_) {
+    return ['#12b76a', '#f59e0b', '#ef4444', '#0ea5e9', '#6366f1'];
+  }
+})();
 	const end = Date.now() + DURATION;
 	const container = document.body;
 	for (let i = 0; i < COUNT; i++) {
