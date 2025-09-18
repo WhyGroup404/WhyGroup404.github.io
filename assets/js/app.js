@@ -19,6 +19,12 @@
 	const btnSettingsCancel = document.getElementById('btnSettingsCancel');
 	const btnSettingsSave = document.getElementById('btnSettingsSave');
 	const btnSettingsClose = document.getElementById('btnSettingsClose');
+	const settingsSearchInput = document.getElementById('settingsSearchInput');
+	const settingsSearchClear = document.getElementById('settingsSearchClear');
+	const settingsSearchEmpty = document.getElementById('settingsSearchEmpty');
+	const settingsSearchBar = document.getElementById('settingsSearchBar');
+	const settingsSearchLabel = document.getElementById('settingsSearchLabel');
+	const settingsSearchCancel = document.getElementById('settingsSearchCancel');
 	const btnClearPicked = document.getElementById('btnClearPicked');
 	const switchNoRepeat = document.getElementById('switchNoRepeat');
 	const switchAnimate = document.getElementById('switchAnimate');
@@ -692,6 +698,13 @@
 		// 触发动画
 		requestAnimationFrame(() => settingsSheet.classList.add('is-open'));
 		document.body.style.overflow = 'hidden';
+		// 聚焦搜索并进入 focusing 状态（隐藏灰色覆盖层）
+		setTimeout(() => { 
+			try { 
+				if (settingsSearchBar) settingsSearchBar.classList.add('weui-search-bar_focusing');
+				settingsSearchInput && settingsSearchInput.focus(); 
+			} catch (_) {} 
+		}, 60);
 	};
 
 	const closeSettings = () => {
@@ -700,6 +713,43 @@
 		setTimeout(() => settingsSheet.classList.add('hidden'), 280);
 		document.body.style.overflow = '';
 	};
+
+	// 设置搜索过滤
+	const SETTINGS_SECTION_TITLE = 'weui-cells__title';
+	const SETTINGS_ROW = 'weui-cell';
+	function filterSettings(keyword) {
+		const root = settingsSheet && settingsSheet.querySelector('.sheet__content');
+		if (!root) return;
+    const q = String(keyword || '').trim().toLowerCase();
+		const titles = Array.from(root.querySelectorAll('.' + SETTINGS_SECTION_TITLE));
+		const rows = Array.from(root.querySelectorAll('.' + SETTINGS_ROW));
+		let anyShown = false;
+		// 先隐藏空提示
+		settingsSearchEmpty && settingsSearchEmpty.classList.add('hidden');
+		// 重置显示
+		titles.forEach(el => el.classList.remove('hidden'));
+		rows.forEach(el => el.classList.remove('hidden'));
+		if (!q) return; // 无关键字显示全部
+		// 过滤行
+    rows.forEach(el => {
+            const extra = (el.getAttribute('data-search') || '').toLowerCase();
+            const text = ((el.textContent || '') + ' ' + extra).toLowerCase();
+			const hit = text.includes(q);
+			if (!hit) el.classList.add('hidden');
+			else anyShown = true;
+		});
+		// 隐藏没有任何可见行的标题
+		titles.forEach(title => {
+			let sibling = title.nextElementSibling;
+			let hasVisible = false;
+			while (sibling && !sibling.classList.contains(SETTINGS_SECTION_TITLE)) {
+				if (!sibling.classList.contains('hidden')) { hasVisible = true; break; }
+				sibling = sibling.nextElementSibling;
+			}
+			if (!hasVisible) title.classList.add('hidden');
+		});
+        if (!anyShown) settingsSearchEmpty && settingsSearchEmpty.classList.remove('hidden');
+	}
 
 	// 新功能弹窗逻辑已抽离到 modules/whatsnew.js
 
@@ -746,19 +796,11 @@
   const applyThemeColor = (hex) => {
     if (!hex) return;
     document.documentElement.style.setProperty('--brand', hex);
-    // 同步相关派生色（通过简易算法估算更深/更亮色）
+    // 让 CSS 依据 var(--brand) 自动推导其他派生色，避免覆盖深色模式下的高亮规则
     try {
-      // 计算 brand-ink：降低亮度
-      const rgb = hex.replace('#','');
-      const r = parseInt(rgb.slice(0,2),16), g = parseInt(rgb.slice(2,4),16), b = parseInt(rgb.slice(4,6),16);
-      const dark = `#${[r,g,b].map(v=>('0'+Math.max(0, Math.floor(v*0.45)).toString(16)).slice(-2)).join('')}`;
-      document.documentElement.style.setProperty('--brand-ink', dark);
-      // ring 根据 brand 调整
-      document.documentElement.style.setProperty('--ring', hex + '55');
-      // brand-600 稍微变深，用于:active 等状态
-      const deep = `#${[r,g,b].map(v=>('0'+Math.max(0, Math.floor(v*0.7)).toString(16)).slice(-2)).join('')}`;
-      document.documentElement.style.setProperty('--brand-600', deep);
-      // 同步浏览器地址栏主题色
+      document.documentElement.style.removeProperty('--brand-ink');
+      document.documentElement.style.removeProperty('--ring');
+      document.documentElement.style.removeProperty('--brand-600');
       const meta = document.getElementById('metaThemeColor');
       if (meta) meta.setAttribute('content', hex);
     } catch (_) {}
@@ -1070,6 +1112,55 @@
 		applyRoster();
 		saveState();
 	});
+
+  // 设置搜索事件
+  // WeUI 搜索交互
+  settingsSearchInput?.addEventListener('input', (e) => {
+    const val = e.target.value || '';
+    filterSettings(val);
+    if (settingsSearchBar) settingsSearchBar.classList.toggle('weui-search-bar_focusing', !!val || document.activeElement === settingsSearchInput);
+  });
+  settingsSearchInput?.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      settingsSearchInput.value = '';
+      filterSettings('');
+      e.preventDefault();
+    }
+  });
+  settingsSearchInput?.addEventListener('focus', () => {
+    if (settingsSearchBar) settingsSearchBar.classList.add('weui-search-bar_focusing');
+  });
+  settingsSearchInput?.addEventListener('blur', () => {
+    const hasVal = !!(settingsSearchInput && settingsSearchInput.value);
+    if (settingsSearchBar && !hasVal) settingsSearchBar.classList.remove('weui-search-bar_focusing');
+    // 退出键入：隐藏“未找到相关设置”提示
+    if (!hasVal && settingsSearchEmpty) settingsSearchEmpty.classList.add('hidden');
+  });
+  settingsSearchClear?.addEventListener('click', () => {
+    if (!settingsSearchInput) return;
+    settingsSearchInput.value = '';
+    filterSettings('');
+    settingsSearchInput.focus();
+    if (settingsSearchEmpty) settingsSearchEmpty.classList.add('hidden');
+  });
+  settingsSearchCancel?.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (!settingsSearchInput) return;
+    settingsSearchInput.value = '';
+    filterSettings('');
+    if (settingsSearchBar) settingsSearchBar.classList.remove('weui-search-bar_focusing');
+    if (settingsSearchEmpty) settingsSearchEmpty.classList.add('hidden');
+  });
+  // 点击占位标签 -> 聚焦输入
+  settingsSearchLabel?.addEventListener('click', (e) => {
+    e.preventDefault();
+    try {
+      if (settingsSearchBar) settingsSearchBar.classList.add('weui-search-bar_focusing');
+      settingsSearchInput && settingsSearchInput.focus();
+    } catch (_) {}
+  });
+  // 阻止表单提交刷新
+  settingsSearchBar?.querySelector('.weui-search-bar__form')?.addEventListener('submit', (e) => e.preventDefault());
 	btnOpenWeights?.addEventListener('click', openWeights);
   btnOpenTheme?.addEventListener('click', openTheme);
   btnThemeClose?.addEventListener('click', closeTheme);
