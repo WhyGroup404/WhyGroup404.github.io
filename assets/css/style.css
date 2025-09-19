@@ -57,14 +57,16 @@ html, body {
 	color: var(--text);
 	font-family: "SC", "Segoe UI", -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Helvetica, Arial, sans-serif;
 	overflow-x: hidden; /* 防止小屏横向抖动 */
+    /* 防止某些浏览器缩放后出现 0.5px 级别的右侧位移 */
+    position: relative;
 }
 
 /* 移动端左右对称：所有主要容器按安全区域留白（避免只左侧留空） */
 .app__header,
 .app__main,
 .app__footer {
-	padding-left: calc(var(--page-padding-x, 16px) + env(safe-area-inset-left, 0px));
-	padding-right: calc(var(--page-padding-x, 16px) + env(safe-area-inset-right, 0px));
+    padding-left: calc(var(--page-padding-x, 16px) + max(env(safe-area-inset-left, 0px), 0px));
+    padding-right: calc(var(--page-padding-x, 16px) + max(env(safe-area-inset-right, 0px), 0px));
 }
 
 /* 初始隐藏主体，显示加载层 */
@@ -136,14 +138,32 @@ html, body {
 /* 恢复浏览器原生 Select 样式 */
 select.weui-select { all: revert; }
 
-.app__settings-btn {
-    border-color: var(--brand);
+/* 新版设置按钮：图标+文本，始终在页眉内对齐且不溢出 */
+.settings-btn {
+    appearance: none;
+    border: 2px solid var(--brand);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--brand) 8%, transparent), color-mix(in srgb, var(--brand) 2%, transparent)), var(--card);
     color: var(--brand);
-    /* 固定在右上角，始终可见 */
-    position: fixed;
-    right: calc(env(safe-area-inset-right, 0px) + 16px);
-    top: calc(env(safe-area-inset-top, 0px) + 12px);
-    z-index: 1000;
+    border-radius: 12px;
+    padding: 8px 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    line-height: 1;
+    box-shadow: 0 2px 0 color-mix(in srgb, var(--brand-ink) 6%, transparent), inset 0 1px 0 rgba(255,255,255,0.6);
+    font-size: 14px;
+    min-height: 38px;
+}
+.settings-btn__icon { width: 20px; height: 20px; display: inline-block; color: var(--brand); }
+.settings-btn__text { font-weight: 600; }
+
+/* 布局：让按钮参与页眉 Flex 布局，始终与标题垂直居中且对齐右侧 */
+.app__settings-btn { margin-left: auto; z-index: 1; }
+@media (max-width: 640px) {
+    .settings-btn { padding: 8px; gap: 0; min-height: 40px; border-radius: 12px; }
+    .settings-btn__icon { width: 22px; height: 22px; }
+    .settings-btn__text { display: none; } /* 小屏仅图标，避免溢出 */
 }
 
 /* 顶部横幅（居中，不占满；出现/隐藏不影响布局） */
@@ -190,7 +210,8 @@ select.weui-select { all: revert; }
 	padding: 16px;
 	max-width: 700px;
 	width: 100%;
-	margin: 0 auto;
+	margin-left: auto;
+	margin-right: auto;
 	display: grid;
 	gap: 16px;
 	align-content: start;
@@ -529,7 +550,21 @@ input.weui-input[type="number"] { -moz-appearance: textfield; }
 
 /* 自适应 */
 @media (max-width: 640px) {
+	/* 某些移动端对 safe-area 处理不一致，统一改为固定对称内边距，避免整体向右偏移 */
+	.app__header,
+	.app__main,
+	.app__footer {
+		padding-left: 14px;
+		padding-right: 14px;
+	}
 	.range-cells { grid-template-columns: 1fr !important; }
+	/* 确保 WeUI 容器左右无额外外边距，避免视觉右偏 */
+	.weui-cells { margin-left: 0 !important; margin-right: 0 !important; }
+	/* 统一给顶部设置栏的每个块左右留出同等间距，避免视觉右贴边 */
+    /* 顶部设置栏：统一左右间距完全一致 */
+    #rangeBar { padding-left: 14px; padding-right: 14px; box-sizing: border-box; }
+    #rangeBar .weui-cells { width: 100%; box-sizing: border-box; }
+    #rangeBar .weui-cells { margin-left: 0 !important; margin-right: 0 !important; }
 	.controls { grid-template-columns: 1fr; }
 	.display { padding: 20px 10px 14px; border-radius: 14px; }
 	/* 用 vmin 按较小边缩放，避免窗口越窄越显得更大 */
@@ -545,10 +580,31 @@ input.weui-input[type="number"] { -moz-appearance: textfield; }
 	.app__header {
 		padding-top: 12px;
 		padding-bottom: 12px;
-		padding-left: calc(14px + env(safe-area-inset-left, 0px));
-		padding-right: calc(14px + env(safe-area-inset-right, 0px));
+		padding-left: 14px;
+		padding-right: 14px;
 	}
 	.card { padding: 12px; border-radius: 12px; }
+
+	/* 移动端：弱化“框体”，与背景融为一体 */
+	.card,
+	.card--panel,
+	.display {
+		background: transparent !important;
+		border: 0 !important;
+		box-shadow: none !important;
+	}
+	.range-cells .weui-cells {
+		background: transparent !important;
+		border: 0 !important;
+		box-shadow: none !important;
+	}
+	/* 但顶部设置栏保持白色卡片样式 */
+	#rangeBar .weui-cells {
+		background: var(--card) !important;
+		border: 1px solid color-mix(in srgb, var(--brand) 22%, transparent) !important;
+		box-shadow: var(--shadow) !important;
+		border-radius: 12px;
+	}
 }
 
 /* 平板优化（横竖屏 iPad/Android 介于手机与桌面之间） */

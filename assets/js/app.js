@@ -77,7 +77,6 @@
 	const btnProfileExport = document.getElementById('btnProfileExport');
 	const btnProfileImport = document.getElementById('btnProfileImport');
 	const inputImportProfile = document.getElementById('inputImportProfile');
-	const btnOpenCore = document.getElementById('btnOpenCore');
   // 主题色设置
   const btnOpenTheme = document.getElementById('btnOpenTheme');
   const themeSheet = document.getElementById('themeSheet');
@@ -698,12 +697,11 @@
 		// 触发动画
 		requestAnimationFrame(() => settingsSheet.classList.add('is-open'));
 		document.body.style.overflow = 'hidden';
-		// 聚焦搜索并进入 focusing 状态（隐藏灰色覆盖层）
-		setTimeout(() => { 
-			try { 
-				if (settingsSearchBar) settingsSearchBar.classList.add('weui-search-bar_focusing');
-				settingsSearchInput && settingsSearchInput.focus(); 
-			} catch (_) {} 
+		// 不再自动聚焦搜索，也不进入 focusing 状态，避免打开即键入
+		setTimeout(() => {
+			try {
+				if (settingsSearchBar) settingsSearchBar.classList.remove('weui-search-bar_focusing');
+			} catch (_) {}
 		}, 60);
 	};
 
@@ -1062,7 +1060,7 @@
 
 		if (browserInfoEl) browserInfoEl.textContent = `${kernel || 'Unknown'} · ${os || 'Unknown OS'}`;
 		if (versionEl) {
-			versionEl.textContent = 'v3.1.1';
+			versionEl.textContent = 'v3.1.2';
 		}
 		if (copyrightEl) {
 			const year = new Date().getFullYear();
@@ -1165,7 +1163,13 @@
   btnOpenTheme?.addEventListener('click', openTheme);
   btnThemeClose?.addEventListener('click', closeTheme);
   btnThemeCancel?.addEventListener('click', closeTheme);
-  btnThemeReset?.addEventListener('click', () => { if (inputThemeColor) inputThemeColor.value = '#12b76a'; });
+  btnThemeReset?.addEventListener('click', () => {
+    if (inputThemeColor) {
+      inputThemeColor.value = '#12b76a';
+      // 立即应用默认主题色，避免需要再次操作触发 input 事件
+      try { applyThemeColor('#12b76a'); } catch (_) {}
+    }
+  });
   inputThemeColor?.addEventListener('input', () => applyThemeColor(inputThemeColor.value));
   themeSwatches?.addEventListener('click', (e) => {
     const t = e.target;
@@ -1297,14 +1301,6 @@
 		e.target.value = '';
 	});
 
-	// 进入 Core 模式（新标签）
-	btnOpenCore?.addEventListener('click', () => {
-		try {
-			window.open('Core/terminal.html', '_blank', 'noopener');
-		} catch (_) {
-			location.href = 'Core/terminal.html';
-		}
-	});
 
 	switchEnableWeights?.addEventListener('change', () => {
 		weightsEnabled = !!switchEnableWeights.checked;

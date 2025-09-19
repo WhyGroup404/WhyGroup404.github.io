@@ -8,6 +8,19 @@
     <link rel="stylesheet" href="weui-master/dist/style/weui.min.css">
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="assets/css/display.css">
+    <script>
+        // 预先应用保存的主题色，避免刷新时出现默认绿色闪烁
+        (function(){
+            try {
+                var saved = localStorage.getItem('rollcall:themeColor');
+                if (saved) {
+                    document.documentElement.style.setProperty('--brand', saved);
+                    var meta = document.getElementById('metaThemeColor');
+                    if (meta) meta.setAttribute('content', saved);
+                }
+            } catch (_) {}
+        })();
+    </script>
     
     <style>
         /* 轻量兜底，主样式在 assets/css/style.css */
@@ -27,25 +40,21 @@
     <meta name="theme-color" content="#12b76a" id="metaThemeColor">
 </head>
 <body data-weui-theme="light">
-    <div id="appLoader" class="loader" aria-live="polite" aria-busy="true">
-        <div class="loader__spinner" role="status" aria-label="正在加载"></div>
-        <div class="loader__text"><span id="loaderStatus">正在加载，请稍候…</span></div>
-        <div class="loader__progress">
-            <div class="loader__bar"><div id="loaderBarInner" class="loader__bar-inner" style="width:0%"></div></div>
-            <div class="loader__meta">
-                <span id="loaderFile">-</span>
-                <span id="loaderPct">0%</span>
-            </div>
-        </div>
-        <button id="btnForceStart" class="weui-btn weui-btn_mini weui-btn_default" style="margin-top:8px;">强制进入</button>
-    </div>
-    <div class="app hidden-onload">
+    <div class="app">
         <header class="app__header">
             <div class="app__brand">
                 <span class="brand__logo">🎯</span>
                 <h1 class="brand__title">学号随机点名</h1>
             </div>
-            <button id="btnOpenSettings" class="weui-btn weui-btn_default app__settings-btn" aria-label="打开设置">设置</button>
+            <button id="btnOpenSettings" class="app__settings-btn settings-btn" aria-label="打开设置">
+                <svg class="settings-btn__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <g fill="currentColor" fill-rule="evenodd" clip-rule="evenodd">
+                        <path d="M12 8.25a3.75 3.75 0 1 0 0 7.5a3.75 3.75 0 0 0 0-7.5M9.75 12a2.25 2.25 0 1 1 4.5 0a2.25 2.25 0 0 1-4.5 0"/>
+                        <path d="M11.975 1.25c-.445 0-.816 0-1.12.02a2.8 2.8 0 0 0-.907.19a2.75 2.75 0 0 0-1.489 1.488c-.145.35-.184.72-.2 1.122a.87.87 0 0 1-.415.731a.87.87 0 0 1-.841-.005c-.356-.188-.696-.339-1.072-.389a2.75 2.75 0 0 0-2.033.545a2.8 2.8 0 0 0-.617.691c-.17.254-.356.575-.578.96l-.025.044c-.223.385-.408.706-.542.98c-.14.286-.25.568-.29.88a2.75 2.75 0 0 0 .544 2.033c.231.301.532.52.872.734a.87.87 0 0 1 .426.726a.87.87 0 0 1-.426.726c-.34.214-.64.433-.872.734a2.75 2.75 0 0 0-.545 2.033c.041.312.15.594.29.88c.135.274.32.595.543.98l.025.044c.222.385.408.706.578.96c.177.263.367.5.617.69a2.75 2.75 0 0 0 2.033.546c.376-.05.716-.2 1.072-.389a.87.87 0 0 1 .84-.005a.86.86 0 0 1 .417.731c.015.402.054.772.2 1.122a2.75 2.75 0 0 0 1.488 1.489c.29.12.59.167.907.188c.304.021.675.021 1.12.021h.05c.445 0 .816 0 1.12-.02c.318-.022.617-.069.907-.19a2.75 2.75 0 0 0 1.489-1.488c.145-.35.184-.72.2-1.122a.87.87 0 0 1 .415-.732a.87.87 0 0 1 .841.006c.356.188.696.339 1.072.388a2.75 2.75 0 0 0 2.033-.544c.25-.192.44-.428.617-.691c.17-.254.356-.575.578-.96l.025-.044c.223-.385.408-.706.542-.98c.14-.286.25-.569.29-.88a2.75 2.75 0 0 0-.544-2.033c-.231-.301-.532-.52-.872-.734a.87.87 0 0 1-.426-.726c0-.278.152-.554.426-.726c.34-.214.64-.433.872-.734a2.75 2.75 0 0 0 .545-2.033a2.8 2.8 0 0 0-.29-.88a18 18 0 0 0-.543-.98l-.025-.044a18 18 0 0 0-.578-.96a2.8 2.8 0 0 0-.617-.69a2.75 2.75 0 0 0-2.033-.546c-.376.05-.716.2-1.072.389a.87.87 0 0 1-.84.005a.87.87 0 0 1-.417-.731c-.015-.402-.054-.772-.2-1.122a2.75 2.75 0 0 0-1.488-1.489c-.29-.12-.59-.167-.907-.188c-.304-.021-.675-.021-1.12-.021zm-1.453 1.595c.077-.032.194-.061.435-.078c.247-.017.567-.017 1.043-.017s.796 0 1.043.017c.241.017.358.046.435.078c.307.127.55.37.677.677c.04.096.073.247.086.604c.03.792.439 1.555 1.165 1.974s1.591.392 2.292.022c.316-.167.463-.214.567-.227a1.25 1.25 0 0 1 .924.247c.066.051.15.138.285.338c.139.206.299.483.537.895s.397.69.506.912c.107.217.14.333.15.416a1.25 1.25 0 0 1-.247.924c-.064.083-.178.187-.48.377c-.672.422-1.128 1.158-1.128 1.996s.456 1.574 1.128 1.996c.302.19.416.294.48.377c.202.263.29.595.247.924c-.01.083-.044.2-.15.416c-.109.223-.268.5-.506.912s-.399.689-.537.895c-.135.2-.219.287-.285.338a1.25 1.25 0 0 1-.924.247c-.104-.013-.25-.06-.567-.227c-.7-.37-1.566-.398-2.292.021s-1.135 1.183-1.165 1.975c-.013.357-.046.508-.086.604a1.25 1.25 0 0 1-.677.677c-.077.032-.194.061-.435.078c-.247.017-.567.017-1.043.017s-.796 0-1.043-.017c-.241-.017-.358-.046-.435-.078a1.25 1.25 0 0 1-.677-.677c-.04-.096-.073-.247-.086-.604c-.03-.792-.439-1.555-1.165-1.974s-1.591-.392-2.292-.022c-.316.167-.463.214-.567.227a1.25 1.25 0 0 1-.924-.247c-.066-.051-.15-.138-.285-.338a17 17 0 0 1-.537-.895c-.238-.412-.397-.69-.506-.912c-.107-.217-.14-.333-.15-.416a1.25 1.25 0 0 1 .247-.924c.064-.083.178-.187.48-.377c.672-.422 1.128-1.158 1.128-1.996s-.456-1.574-1.128-1.996c-.302-.19-.416-.294-.48-.377a1.25 1.25 0 0 1-.247-.924c.01-.083.044-.2.15-.416c.109-.223.268-.5.506-.912s.399-.689.537-.895c.135-.2.219-.287.285-.338a1.25 1.25 0 0 1 .924-.247c.104.013.25.06.567.227c.7.37 1.566.398 2.292-.022c.726-.419 1.135-1.182 1.165-1.974c.013-.357.046-.508.086-.604c.127-.307.37-.55.677-.677"/>
+                    </g>
+                </svg>
+                <span class="settings-btn__text">设置</span>
+            </button>
         </header>
 
         <!-- 顶部横幅（可复用，默认隐藏） -->
@@ -116,7 +125,7 @@
                 <span class="dot">·</span>
                 <span>浏览器：<span id="browserInfo">-</span></span>
                 <span class="dot">·</span>
-                <span>版本：v3.1.1</span>
+                <span>版本：v3.1.2</span>
                 <span class="dot">·</span>
                 <span>台州王浩哥集团有限公司 © 2025</span>
                 <span class="dot">·</span>
@@ -250,18 +259,6 @@
                     </div>
                 </div>
 
-                <div class="weui-cells__title"><span class="title-with-icon"><img class="icon" src="assets/img/menu/Regular.png" alt="" aria-hidden="true">Core模式</span></div>
-                <div class="weui-cell">
-                    <div class="weui-cell__bd" data-search="Core 模式 终端 命令行 备用">进入 Core 模式（UI界面用不了的情况下）</div>
-                    <div class="weui-cell__ft">
-                        <button id="btnOpenCore" class="weui-btn weui-btn_mini weui-btn_default btn-icon" title="打开">
-                            <img class="open-icon open-icon--light" src="assets/img/open/Open_Black.png" alt="" aria-hidden="true">
-                            <img class="open-icon open-icon--dark" src="assets/img/open/Open_White.png" alt="" aria-hidden="true">
-                            打开
-                        </button>
-                    </div>
-                </div>
-
                 <div class="weui-cells__title"><span class="title-with-icon"><img class="icon" src="assets/img/menu/PlusSettings.png" alt="" aria-hidden="true">高级抽取策略</span></div>
                 <label class="weui-cell weui-cell_switch">
                     <div class="weui-cell__bd" data-search="概率 权重 百分比 机会 设置">启用概率权重(可以设置每个学号抽中的概率)</div>
@@ -296,16 +293,17 @@
     <!-- 新功能弹窗 -->
     <div id="whatsNewSheet" class="weui-mask hidden" role="dialog" aria-modal="true" style="z-index: 999999999;">
         <div class="sheet">
-            <div class="sheet__header">新功能<button id="btnWhatsNewClose" class="sheet__close" aria-label="关闭">×</button></div>
+            <div class="sheet__header">新改进<button id="btnWhatsNewClose" class="sheet__close" aria-label="关闭">×</button></div>
             <div class="sheet__content">
-                <div class="weui-cells__title">当前版本：v3.1.1</div>
+                <div class="weui-cells__title">当前版本：v3.1.2</div>
                 <div class="weui-cells">
-                    <div class="weui-cell">新增：主题色设置（调色盘、预设、自定义预设保存）</div>
-                    <div class="weui-cell">新增：每个班级保存各自主题色，切换班级自动切换颜色</div>
-                    <div class="weui-cell">优化：深色模式整体提亮，边框/阴影/输入跟随主题联动</div>
-                    <div class="weui-cell">新增: 设置支持搜索</div>
-                    <div class="weui-cell">修复：若干小问题和视觉细节</div>
-                    <div class="weui-cell">2025年9月18日  更新 感谢您的支持</div>
+                    <div class="weui-cell">修复：刷新后主题色短暂闪回默认绿色</div>
+                    <div class="weui-cell">优化：启动无需加载</div>
+                    <div class="weui-cell">重做：设置按钮</div>
+                    <div class="weui-cell">移动端：弱化卡片边框与阴影，整体更融入背景</div>
+                    <div class="weui-cell">优化：打开设置弹窗不再默认聚焦搜索框</div>
+                    <div class="weui-cell">其他：若干体验与稳定性改进</div>
+                    <div class="weui-cell">2025年9月19日  更新 感谢您的支持</div>
                 </div>
             </div>
             <div class="sheet__footer">
@@ -426,78 +424,7 @@
             </div>
         </div>
     </div>
-    <script>
-        (function(){
-            var loader = document.getElementById('appLoader');
-            var statusEl = document.getElementById('loaderStatus');
-            var fileEl = document.getElementById('loaderFile');
-            var pctEl = document.getElementById('loaderPct');
-            var barInner = document.getElementById('loaderBarInner');
-            var btnForce = document.getElementById('btnForceStart');
 
-            function showApp(){
-                var app = document.querySelector('.app');
-                if(app) app.classList.remove('hidden-onload');
-                if(loader && loader.parentNode) loader.parentNode.removeChild(loader);
-            }
-
-            function fontsReady(){
-                var fonts = document.fonts;
-                if(fonts && fonts.ready){ return fonts.ready.catch(function(){}); }
-                return Promise.resolve();
-            }
-
-            function setProgress(name, loaded, total){
-                var pct = total > 0 ? Math.round(loaded / total * 100) : (document.readyState === 'complete' ? 100 : 0);
-                if (fileEl) fileEl.textContent = name || '-';
-                if (pctEl) pctEl.textContent = pct + '%';
-                if (barInner) barInner.style.width = pct + '%';
-            }
-
-            btnForce && btnForce.addEventListener('click', function(){ showApp(); });
-
-            // Track external CSS/JS resources
-            var res = [];
-            try {
-                var links = Array.prototype.slice.call(document.querySelectorAll('link[rel="stylesheet"][href]'));
-                var scripts = Array.prototype.slice.call(document.querySelectorAll('script[defer][src]'));
-                links.forEach(function(el){ res.push({ el: el, url: el.getAttribute('href') }); });
-                scripts.forEach(function(el){ res.push({ el: el, url: el.getAttribute('src') }); });
-            } catch (e) {}
-
-            var total = res.length;
-            var loaded = 0;
-            if (total === 0) setProgress('-', 1, 1);
-
-            res.forEach(function(item){
-                var done = false;
-                function mark(){ if (done) return; done = true; loaded++; setProgress(item.url, loaded, total); if (loaded >= total) onAllLoaded(); }
-                item.el.addEventListener('load', mark);
-                item.el.addEventListener('error', mark);
-                // If already complete (some browsers), mark in next tick
-                setTimeout(function(){
-                    // Heuristic: CSS with sheet present, or script with readyState === 'complete'
-                    try {
-                        if ((item.el.tagName === 'LINK' && item.el.sheet) || (item.el.tagName === 'SCRIPT' && (item.el.readyState === 'complete'))){ mark(); }
-                    } catch (_) {}
-                }, 0);
-            });
-
-            function onAllLoaded(){
-                statusEl && (statusEl.textContent = '初始化字体…');
-                fontsReady().then(function(){ statusEl && (statusEl.textContent = '就绪'); setProgress('完成', 1, 1); }).then(function(){
-                    // 若页面已完全加载或用户强制，则展示
-                    if (document.readyState === 'complete') showApp();
-                    else window.addEventListener('load', function(){ showApp(); }, { once: true });
-                });
-            }
-
-            if (document.readyState === 'complete') { setProgress('完成', 1, 1); showApp(); return; }
-
-            // 兜底：即便资源事件缺失，onload 时也会显示
-            window.addEventListener('load', function(){ setProgress('完成', total, total); onAllLoaded(); }, { once: true });
-        })();
-    </script>
 
 </body>
 </html>
