@@ -125,7 +125,7 @@
                 <span class="dot">·</span>
                 <span>浏览器：<span id="browserInfo">-</span></span>
                 <span class="dot">·</span>
-                <span>版本：v3.1.2</span>
+                <span>版本：v3.1.3</span>
                 <span class="dot">·</span>
                 <span>台州王浩哥集团有限公司 © 2025</span>
                 <span class="dot">·</span>
@@ -260,6 +260,16 @@
                 </div>
 
                 <div class="weui-cells__title"><span class="title-with-icon"><img class="icon" src="assets/img/menu/PlusSettings.png" alt="" aria-hidden="true">高级抽取策略</span></div>
+                <div class="weui-cell">
+                    <div class="weui-cell__bd" data-search="均衡 智能 抽取 设置">智能抽取设置（均衡模式）</div>
+                    <div class="weui-cell__ft">
+                        <button id="btnOpenAdvanced" class="weui-btn weui-btn_mini weui-btn_default btn-icon" title="打开">
+                            <img class="open-icon open-icon--light" src="assets/img/open/Open_Black.png" alt="" aria-hidden="true">
+                            <img class="open-icon open-icon--dark" src="assets/img/open/Open_White.png" alt="" aria-hidden="true">
+                            打开
+                        </button>
+                    </div>
+                </div>
                 <label class="weui-cell weui-cell_switch">
                     <div class="weui-cell__bd" data-search="概率 权重 百分比 机会 设置">启用概率权重(可以设置每个学号抽中的概率)</div>
                     <div class="weui-cell__ft">
@@ -295,15 +305,13 @@
         <div class="sheet">
             <div class="sheet__header">新改进<button id="btnWhatsNewClose" class="sheet__close" aria-label="关闭">×</button></div>
             <div class="sheet__content">
-                <div class="weui-cells__title">当前版本：v3.1.2</div>
+                <div class="weui-cells__title">当前版本：v3.1.3</div>
                 <div class="weui-cells">
-                    <div class="weui-cell">修复：刷新后主题色短暂闪回默认绿色</div>
-                    <div class="weui-cell">优化：启动无需加载</div>
-                    <div class="weui-cell">重做：设置按钮</div>
-                    <div class="weui-cell">移动端：弱化卡片边框与阴影，整体更融入背景</div>
-                    <div class="weui-cell">优化：打开设置弹窗不再默认聚焦搜索框</div>
-                    <div class="weui-cell">其他：若干体验与稳定性改进</div>
-                    <div class="weui-cell">2025年9月19日  更新 感谢您的支持</div>
+                    <div class="weui-cell">新增智能抽取设置</div>
+                    <div class="weui-cell">修复没启用启用概率权重状态下还是会应用概率设置的BUG</div>
+                    <div class="weui-cell">修复其他已知问题</div>
+                    <div class="weui-cell">2025年9月21日  更新 感谢您的支持</div>
+
                 </div>
             </div>
             <div class="sheet__footer">
@@ -341,6 +349,45 @@
             <div class="sheet__footer">
                 <button id="btnWeightsCancel" class="weui-btn weui-btn_default">取消</button>
                 <button id="btnWeightsSave" class="weui-btn weui-btn_primary">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 智能抽取设置弹窗 -->
+    <div id="advancedSheet" class="weui-mask hidden" role="dialog" aria-modal="true">
+        <div class="sheet">
+            <div class="sheet__header">智能抽取设置<button id="btnAdvancedClose" class="sheet__close" aria-label="关闭">×</button></div>
+            <div class="sheet__content">
+                <div class="weui-cells__title">高级抽取策略</div>
+                <label class="weui-cell weui-cell_switch">
+                    <div class="weui-cell__bd">均衡模式（久未被抽到的更容易被抽中）</div>
+                    <div class="weui-cell__ft">
+                        <input id="switchBalancedMode" class="weui-switch" type="checkbox">
+                    </div>
+                </label>
+                <div class="weui-cell">
+                    <div class="weui-cell__bd" style="color:var(--muted);">启用后，系统会根据上次被点到的时间自动增加权重：越久未被点到，权重越高；首次未被点到者权重最高。可与“概率权重”叠加。</div>
+                </div>
+                <div class="weui-cell">
+                    <div class="weui-cell__bd">
+                        <label for="inputBalancedBoost" class="weui-label">均衡强度（最高加成系数）</label>
+                        <input id="inputBalancedBoost" type="range" min="1" max="3" step="0.1" value="2" style="width:100%">
+                        <div style="margin-top:6px;color:var(--muted);">当前：<span id="balancedBoostPreview">1.00x ~ 2.00x</span></div>
+                    </div>
+                </div>
+                <div class="weui-cells__title">使用说明</div>
+                <div class="weui-cells">
+                    <div class="weui-cell">
+                        <div class="weui-cell__bd" style="color:var(--muted);">
+                            <p>均衡模式会自动照顾久未被点到的同学；与“概率权重”叠加生效。</p>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+            <div class="sheet__footer">
+                <button id="btnAdvancedCancel" class="weui-btn weui-btn_default">取消</button>
+                <button id="btnAdvancedSave" class="weui-btn weui-btn_primary">保存</button>
             </div>
         </div>
     </div>

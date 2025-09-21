@@ -52,6 +52,19 @@
 	const weightsList = document.getElementById('weightsList');
 	const weightsTotal = document.getElementById('weightsTotal');
 	const switchWeightsIgnoreNoRepeat = document.getElementById('switchWeightsIgnoreNoRepeat');
+	// 智能抽取（独立弹窗）
+	const advancedSheet = document.getElementById('advancedSheet');
+	const btnOpenAdvanced = document.getElementById('btnOpenAdvanced');
+const btnAdvancedClose = document.getElementById('btnAdvancedClose');
+const btnAdvancedCancel = document.getElementById('btnAdvancedCancel');
+const btnAdvancedSave = document.getElementById('btnAdvancedSave');
+const switchBalancedMode = document.getElementById('switchBalancedMode');
+const inputBalancedBoost = document.getElementById('inputBalancedBoost');
+const balancedBoostPreview = document.getElementById('balancedBoostPreview');
+	// 智能抽取记录元素
+	const balancedLogList = document.getElementById('balancedLogList');
+	const balancedLogEmpty = document.getElementById('balancedLogEmpty');
+	const btnBalancedLogClear = document.getElementById('btnBalancedLogClear');
 	// 名单独立弹窗
 	const rosterSheet = document.getElementById('rosterSheet');
 	const btnOpenRoster = document.getElementById('btnOpenRoster');
@@ -109,8 +122,15 @@
 	// 概率权重：Map<number, number>  学号 -> 百分比
 	let weightMap = new Map();
 	let weightsEnabled = false;
-	let weightsIgnoreNoRepeat = false; // 已设置权重的学号可忽略“不重复”
+	let weightsIgnoreNoRepeat = false; // 已设置权重的学号可忽略"不重复"
 	let weightsMaskEnabled = false; // 掩盖概率：滚动时不按权重，结果按权重
+	// 均衡与种子随机
+	let balancedEnabled = false;
+	let lastPickedAtMap = new Map(); // 学号 -> 最近一次被抽时间戳
+	// 智能抽取记录
+	let balancedLogs = []; // [{number, time}]
+	let lastPickWasBalanced = false; // 仅对最终点名有效
+let balancedBoostMax = 2.0; // [1,3]
 
 	/** 自适应字号：根据容器可用空间自适应显示学号 **/
 	const isCountdownVisible = () => !!displayCountdown && !displayCountdown.classList.contains('hidden');
@@ -125,7 +145,7 @@
 			const absMax = Math.max(a, b, 0);
 			const digits = String(Math.floor(absMax || 0)).length || 1;
 			const hasNegative = (Number(inputMin?.value) || 0) < 0;
-			// 采用更宽的数字“8”进行测量，获得上限宽度
+			// 采用更宽的数字"8"进行测量，获得上限宽度
 			const sample = (hasNegative ? '-' : '') + '8'.repeat(Math.max(1, digits));
 			const meas = document.createElement('span');
 			meas.className = displayNumber.className;
@@ -244,6 +264,12 @@
 		updateAutoSecondsUI();
 		// 同步权重 UI
 		if (weightsEnabled && switchEnableWeights) switchEnableWeights.checked = true;
+		// 加载并渲染该班级的智能抽取记录
+		try {
+			const raw = localStorage.getItem(getMetaKey(currentProfileId)+':balancedLogs');
+			balancedLogs = raw ? JSON.parse(raw) : [];
+			renderBalancedLogs();
+		} catch (_) { balancedLogs = []; renderBalancedLogs(); }
 	};
 
 	/** 工具函数 **/
@@ -258,35 +284,31 @@
 
 	const parseRoster = window.Roster.parseRoster;
 
-	const sampleInt = (min, max, excludeSet, noRepeat) => {
+	const sampleInt = (min, max, excludeSet, noRepeat, options = {}) => {
+		const rand = Math.random;
 		// 先判断当前范围是否存在正权重学号
 		let hasPositiveWeightInRange = false;
 		for (let i = min; i <= max; i++) {
 			if (excludeSet.has(i)) continue;
 			if ((Number(weightMap.get(i)) || 0) > 0) { hasPositiveWeightInRange = true; break; }
 		}
-		const ignoreNoRepeatActive = !!(noRepeat && weightsIgnoreNoRepeat && hasPositiveWeightInRange);
+		const ignoreNoRepeatActive = !!(noRepeat && weightsIgnoreNoRepeat && weightsEnabled && hasPositiveWeightInRange);
 
 		const candidates = [];
 		for (let i = min; i <= max; i++) {
 			if (excludeSet.has(i)) continue;
 			if (noRepeat && pickedSet.has(i)) {
-				// 开启“权重学号忽略不重复”时，让有正权重的学号不受不重复限制
+				// 开启"权重学号忽略不重复"时，让有正权重的学号不受不重复限制
 				const isWeightedPositive = (Number(weightMap.get(i)) || 0) > 0;
 				if (!(ignoreNoRepeatActive && isWeightedPositive)) continue;
 			}
 			candidates.push(i);
 		}
 		if (candidates.length === 0) return null;
-		// 若开启权重或候选中存在正权重，则使用加权抽取
-		let useWeighted = !!weightsEnabled;
-		if (!useWeighted) {
-			for (let i = 0; i < candidates.length; i++) {
-				if ((Number(weightMap.get(candidates[i])) || 0) > 0) { useWeighted = true; break; }
-			}
-		}
+		// 加权条件：显式启用权重，或启用均衡模式（滚动时若开启掩盖则仍走均匀随机）
+		let useWeighted = !!weightsEnabled || !!balancedEnabled;
 		if (!useWeighted || (weightsMaskEnabled && isRolling)) {
-			const idx = Math.floor(Math.random() * candidates.length);
+			const idx = Math.floor(rand() * candidates.length);
 			return candidates[idx];
 		}
 		// 构建每个候选学号的权重，未设置者取剩余平均
@@ -295,7 +317,7 @@
 		let unsetCount = 0;
 		for (let i = 0; i < candidates.length; i++) {
 			const n = candidates[i];
-			const p = Number(weightMap.get(n)) || 0;
+			const p = weightsEnabled ? (Number(weightMap.get(n)) || 0) : 0;
 			if (p > 0) {
 				weights[i] = p;
 				assignedTotal += p;
@@ -310,22 +332,55 @@
 				if (weights[i] === 0) weights[i] = avg;
 			}
 		}
+		// 均衡模式：对久未被抽到者提升 1x~N 权重（N 可配置，默认 2）
+		if (balancedEnabled) {
+			const now = Date.now();
+			const ages = new Array(candidates.length);
+			let minAge = Infinity;
+			let maxAge = 0;
+			let anyFinite = false;
+			for (let i = 0; i < candidates.length; i++) {
+				const id = candidates[i];
+				const ts = Number(lastPickedAtMap.get(id)) || 0;
+				let age;
+				if (ts > 0 && ts < now) { age = Math.max(0, now - ts); anyFinite = true; } else { age = Infinity; }
+				ages[i] = age;
+				if (Number.isFinite(age)) { if (age < minAge) minAge = age; if (age > maxAge) maxAge = age; }
+			}
+			const baseMax = anyFinite ? Math.max(1, maxAge) : 1;
+			const notPickedAge = baseMax * 1.5 + 1000;
+			for (let i = 0; i < ages.length; i++) { if (!Number.isFinite(ages[i])) ages[i] = notPickedAge; }
+			minAge = Math.min(minAge, notPickedAge);
+			maxAge = Math.max(maxAge, notPickedAge);
+			const span = Math.max(1, maxAge - minAge);
+			const maxBoost = Math.min(3, Math.max(1, Number(balancedBoostMax) || 2));
+			for (let i = 0; i < candidates.length; i++) {
+				const normalized = (ages[i] - minAge) / span; // [0,1]
+				const boost = 1 + normalized * (maxBoost - 1); // [1,maxBoost]
+				weights[i] = Math.max(0, weights[i]) * boost;
+			}
+			// 标记：本次选择将可能因均衡加成
+			lastPickWasBalanced = true;
+		}
 		// 已分配总和可>100：允许按比例放大（同时保留未设权重者为0）
 		let total = 0;
 		for (let w of weights) total += Math.max(0, w);
 		if (!(total > 0)) {
 			// 如果权重总和为 0，则退化为等概率
-			const idx = Math.floor(Math.random() * candidates.length);
+			const idx = Math.floor(rand() * candidates.length);
 			return candidates[idx];
 		}
 		// 加权随机
-		let r = Math.random() * total;
+		let r = rand() * total;
 		for (let i = 0; i < candidates.length; i++) {
 			r -= Math.max(0, weights[i]);
 			if (r <= 0) return candidates[i];
 		}
 		return candidates[candidates.length - 1];
 	};
+
+	// —— Seeded RNG: xmur3 + sfc32 ——
+	// 已移除：种子随机实现
 
 	// 历史 UI 已去除，仅保留数据结构即可
 	const renderHistory = () => {};
@@ -378,6 +433,13 @@
 			weightsMaskEnabled: switchWeightsMask ? !!switchWeightsMask.checked : weightsMaskEnabled,
 			weightsIgnoreNoRepeat: switchWeightsIgnoreNoRepeat ? !!switchWeightsIgnoreNoRepeat.checked : weightsIgnoreNoRepeat,
 			weightRules: Array.from(weightMap.entries()).map(([id, percent]) => ({ id, percent })),
+			// 均衡配置与数据
+			balancedEnabled: switchBalancedMode ? !!switchBalancedMode.checked : balancedEnabled,
+			lastPicked: Array.from(lastPickedAtMap.entries()).map(([id, ts]) => ({ id, ts })),
+			balancedBoostMax: (function(){
+				const v = inputBalancedBoost ? Number(inputBalancedBoost.value) : balancedBoostMax;
+				return Math.min(3, Math.max(1, Number(v) || 2));
+			})()
 		};
 		if (currentProfileId) localStorage.setItem(getStateKey(currentProfileId), JSON.stringify(state));
 		// 保存元信息：不重复过期策略与时间戳
@@ -444,6 +506,19 @@
 					}
 				}
 			}
+			// 均衡
+			balancedEnabled = !!s.balancedEnabled;
+			if (switchBalancedMode) switchBalancedMode.checked = balancedEnabled;
+			balancedBoostMax = Math.min(3, Math.max(1, Number(s.balancedBoostMax) || 2));
+			if (inputBalancedBoost) inputBalancedBoost.value = String(balancedBoostMax);
+			if (balancedBoostPreview) balancedBoostPreview.textContent = `1.00x ~ ${balancedBoostMax.toFixed(2)}x`;
+			lastPickedAtMap = new Map();
+			if (Array.isArray(s.lastPicked)) {
+				for (const rec of s.lastPicked) {
+					if (rec && Number.isFinite(rec.id) && Number.isFinite(rec.ts)) lastPickedAtMap.set(Math.floor(rec.id), Math.floor(rec.ts));
+				}
+			}
+			// 种子随机已移除
 
 			// 加载过期策略并检查是否需要清空不重复集合
 			try {
@@ -653,7 +728,7 @@
 	const renderWeightsList = () => {
 		if (!weightsList) return;
 		weightsList.innerHTML = '';
-		// 固定顺序，避免局部更新引发排序变化导致看起来“只有第一个生效”错觉
+		// 固定顺序，避免局部更新引发排序变化导致看起来"只有第一个生效"错觉
 		const entries = Array.from(weightMap.entries()).sort((a,b) => a[0]-b[0]);
 		entries.forEach(([id, percent], idx) => {
 			weightsList.appendChild(makeWeightRow(id, percent, idx));
@@ -661,7 +736,7 @@
 		if (weightMap.size === 0) {
             const empty = document.createElement('div');
             empty.className = 'weui-cell';
-            empty.innerHTML = '<div class="weui-cell__bd" style="color:var(--muted);">暂无学号，点击“添加学号”开始配置</div>';
+            empty.innerHTML = '<div class="weui-cell__bd" style="color:var(--muted);">暂无学号，点击"添加学号"开始配置</div>';
 			weightsList.appendChild(empty);
 		}
 	};
@@ -771,6 +846,8 @@
     } catch (_) {}
   };
 
+	// 记录功能已移除
+
   const closeTheme = () => {
     if (!themeSheet) return;
     themeSheet.classList.remove('is-open');
@@ -835,6 +912,30 @@
 		document.body.style.overflow = '';
 	};
 
+	// 智能抽取弹窗控制
+	const openAdvanced = () => {
+		if (!advancedSheet) return;
+		advancedSheet.classList.remove('hidden');
+		requestAnimationFrame(() => advancedSheet.classList.add('is-open'));
+		document.body.style.overflow = 'hidden';
+		// 打开时同步 UI
+		try {
+			if (switchBalancedMode) switchBalancedMode.checked = !!balancedEnabled;
+			if (inputBalancedBoost) inputBalancedBoost.value = String(Math.min(3, Math.max(1, Number(balancedBoostMax) || 2)));
+			if (balancedBoostPreview) {
+				const mx = Math.min(3, Math.max(1, Number(balancedBoostMax) || 2));
+				balancedBoostPreview.textContent = `1.00x ~ ${mx.toFixed(2)}x`;
+			}
+		} catch (_) {}
+	};
+
+	const closeAdvanced = () => {
+		if (!advancedSheet) return;
+		advancedSheet.classList.remove('is-open');
+		setTimeout(() => advancedSheet.classList.add('hidden'), 280);
+		document.body.style.overflow = '';
+	};
+
 	const startRoll = () => {
 		if (isRolling) return;
 		// 校验最小/最大是否已填写
@@ -862,7 +963,7 @@
 		const noRepeat = switchNoRepeat.checked;
 		const canPick = sampleInt(min, max, excludeSet, noRepeat);
 		if (canPick == null) {
-			const msg = '系统中可选的学号为空（都抽完了TAT），请检查“范围/排除/不重复/概率”设置';
+			const msg = '系统中可选的学号为空（都抽完了TAT），请检查"范围/排除/不重复/概率"设置';
 			try { showBanner && showBanner(msg, 'red', 5000, { showClose: true }); }
 			catch (_) { try { alert(msg); } catch (_) {} }
 			return;
@@ -909,9 +1010,9 @@
 		const [min, max] = clampRange(Number(inputMin.value), Number(inputMax.value));
 		const excludeSet = parseExclude(inputExclude.value);
 		const noRepeat = switchNoRepeat.checked;
-		// 停止时：若开启掩盖概率，最终结果必须按权重抽取
+		// 停止时：若开启掩盖概率，最终结果必须按权重/均衡抽取
 		let n = null;
-		if (weightsMaskEnabled && weightsEnabled) {
+		if (weightsMaskEnabled && (weightsEnabled || balancedEnabled)) {
 			// 强制按权重：临时置 true 并忽略 rolling 状态
 			const prev = isRolling; isRolling = false;
 			n = (function weightedPick(){
@@ -944,24 +1045,35 @@
 			time: new Date().toLocaleString(),
 		};
 		pickedStack.push(item);
+		try { lastPickedAtMap.set(n, Date.now()); } catch (_) {}
+		// 若标记了均衡影响，则写入记录
+		try {
+			if (balancedEnabled && lastPickWasBalanced) {
+				appendBalancedLog(n, Date.now());
+			}
+		} catch (_) {}
+		lastPickWasBalanced = false;
 		renderHistory();
 		saveState();
 		// 保持容器高度一致（不释放高度）
 		refreshAndLockDisplayBoxHeight();
 	};
 
-	const resetAll = () => {
-		pickedSet.clear();
-		pickedStack = [];
-		updateDisplay(null);
-		renderHistory();
-		saveState();
-	};
+const resetAll = () => {
+    pickedSet.clear();
+    pickedStack = [];
+    lastPickedAtMap.clear();
+    // 不清空智能抽取记录
+    updateDisplay(null);
+    renderHistory();
+    saveState();
+};
 
 	const undoLast = () => {
 		const last = pickedStack.pop();
 		if (!last) return;
 		pickedSet.delete(last.number);
+		try { lastPickedAtMap.delete(last.number); } catch (_) {}
 		updateDisplay(last.number);
 		renderHistory();
 		saveState();
@@ -1060,7 +1172,7 @@
 
 		if (browserInfoEl) browserInfoEl.textContent = `${kernel || 'Unknown'} · ${os || 'Unknown OS'}`;
 		if (versionEl) {
-			versionEl.textContent = 'v3.1.2';
+			versionEl.textContent = 'v3.1.3';
 		}
 		if (copyrightEl) {
 			const year = new Date().getFullYear();
@@ -1131,7 +1243,7 @@
   settingsSearchInput?.addEventListener('blur', () => {
     const hasVal = !!(settingsSearchInput && settingsSearchInput.value);
     if (settingsSearchBar && !hasVal) settingsSearchBar.classList.remove('weui-search-bar_focusing');
-    // 退出键入：隐藏“未找到相关设置”提示
+    // 退出键入：隐藏"未找到相关设置"提示
     if (!hasVal && settingsSearchEmpty) settingsSearchEmpty.classList.add('hidden');
   });
   settingsSearchClear?.addEventListener('click', () => {
@@ -1318,17 +1430,19 @@
 		updateWeightsTotal();
 	});
 
-	btnClearPicked?.addEventListener('click', () => {
-		pickedSet.clear();
-		pickedStack = [];
-		saveState();
-		renderHistory();
-		const current = Number(displayNumber.textContent);
-		if (Number.isFinite(current)) updateDisplay(current);
-		if (window.weui && typeof window.weui.toast === 'function') {
-			window.weui.toast('已清空', 1500);
-		}
-	});
+btnClearPicked?.addEventListener('click', () => {
+    pickedSet.clear();
+    pickedStack = [];
+    lastPickedAtMap.clear();
+    // 不清空智能抽取记录
+    saveState();
+    renderHistory();
+    const current = Number(displayNumber.textContent);
+    if (Number.isFinite(current)) updateDisplay(current);
+    if (window.weui && typeof window.weui.toast === 'function') {
+        window.weui.toast('已清空', 1500);
+    }
+});
 
 	// 自动抽人（可配置 1-10 秒）
 	btnAuto5s?.addEventListener('click', () => {
@@ -1366,6 +1480,36 @@
 		};
 		countdownRAF = requestAnimationFrame(tick);
 	});
+
+	// —— 智能抽取弹窗事件 ——
+	btnOpenAdvanced?.addEventListener('click', openAdvanced);
+	btnAdvancedClose?.addEventListener('click', closeAdvanced);
+	btnAdvancedCancel?.addEventListener('click', closeAdvanced);
+	btnAdvancedSave?.addEventListener('click', () => {
+		balancedEnabled = !!(switchBalancedMode && switchBalancedMode.checked);
+		if (inputBalancedBoost) {
+			balancedBoostMax = Math.min(3, Math.max(1, Number(inputBalancedBoost.value) || 2));
+		}
+		saveState();
+		closeAdvanced();
+	});
+	btnBalancedLogClear?.addEventListener('click', () => {
+		balancedLogs = [];
+		try { localStorage.setItem(getMetaKey(currentProfileId)+':balancedLogs', '[]'); } catch (_) {}
+		renderBalancedLogs();
+	});
+	// 即时保存
+	switchBalancedMode?.addEventListener('change', () => { balancedEnabled = !!switchBalancedMode.checked; saveState(); });
+
+inputBalancedBoost?.addEventListener('input', () => {
+	const mx = Math.min(3, Math.max(1, Number(inputBalancedBoost.value) || 2));
+	balancedBoostPreview && (balancedBoostPreview.textContent = `1.00x ~ ${mx.toFixed(2)}x`);
+});
+inputBalancedBoost?.addEventListener('change', () => {
+	balancedBoostMax = Math.min(3, Math.max(1, Number(inputBalancedBoost.value) || 2));
+	saveState();
+});
+	// 种子相关事件已移除
 
 	[inputMin, inputMax, inputExclude, switchNoRepeat, switchAnimate, switchShowRangeBar, inputAutoSeconds].forEach((el) => {
 		el?.addEventListener('change', () => {
@@ -1452,6 +1596,12 @@
 	setDynamicVhVar();
 	refreshAndLockDisplayBoxHeight();
 	fitDisplayNumber();
+	// 渲染智能抽取记录
+	try {
+		const raw = localStorage.getItem(getMetaKey(currentProfileId)+':balancedLogs');
+		balancedLogs = raw ? JSON.parse(raw) : [];
+	} catch (_) { balancedLogs = []; }
+	renderBalancedLogs();
 	// 监听窗口/方向变化
 	window.addEventListener('resize', () => {
 		setDynamicVhVar();
