@@ -14,6 +14,11 @@
 	const displayCountdown = document.getElementById('displayCountdown');
 	const displayLabel = document.getElementById('displayLabel');
 	const displayBox = document.querySelector('.display');
+    // 结果操作栏
+    const resultActions = document.getElementById('resultActions');
+    const btnMarkCorrect = document.getElementById('btnMarkCorrect');
+    const btnMarkWrong = document.getElementById('btnMarkWrong');
+    const btnMarkSkip = document.getElementById('btnMarkSkip');
 	const btnOpenSettings = document.getElementById('btnOpenSettings');
 	const settingsSheet = document.getElementById('settingsSheet');
 	const btnSettingsCancel = document.getElementById('btnSettingsCancel');
@@ -61,6 +66,26 @@ const btnAdvancedSave = document.getElementById('btnAdvancedSave');
 const switchBalancedMode = document.getElementById('switchBalancedMode');
 const inputBalancedBoost = document.getElementById('inputBalancedBoost');
 const balancedBoostPreview = document.getElementById('balancedBoostPreview');
+	// 智慧统计控制
+    const switchSmartStats = document.getElementById('switchSmartStats');
+    const switchSmartStatsDecay = document.getElementById('switchSmartStatsDecay');
+    const inputSmartWrongAlpha = document.getElementById('inputSmartWrongAlpha');
+    const smartWrongAlphaPreview = document.getElementById('smartWrongAlphaPreview');
+    const btnOpenSmartStats = document.getElementById('btnOpenSmartStats');
+    const smartStatsSheet = document.getElementById('smartStatsSheet');
+    const btnSmartStatsClose = document.getElementById('btnSmartStatsClose');
+    const btnSmartStatsOk = document.getElementById('btnSmartStatsOk');
+    const smartStatsMonthTitle = document.getElementById('smartStatsMonthTitle');
+    const smartStatsTopPicked = document.getElementById('smartStatsTopPicked');
+    const smartStatsTopCorrect = document.getElementById('smartStatsTopCorrect');
+    const smartStatsTopWrong = document.getElementById('smartStatsTopWrong');
+    // 智慧统计提示（需关闭不重复）
+    const hintDisableNoRepeat = document.getElementById('hintDisableNoRepeat');
+    const actionDisableNoRepeat = document.getElementById('actionDisableNoRepeat');
+    // 标题下方的同款提示（与下文复用一套逻辑，通过 class 统一）
+    const hintDisableNoRepeatTop = document.getElementById('hintDisableNoRepeatTop');
+    const hintDisableNoRepeatTopRow = document.getElementById('hintDisableNoRepeatTopRow');
+    const actionDisableNoRepeatTop = document.getElementById('actionDisableNoRepeatTop');
 	// 智能抽取记录元素
 	const balancedLogList = document.getElementById('balancedLogList');
 	const balancedLogEmpty = document.getElementById('balancedLogEmpty');
@@ -131,6 +156,45 @@ const balancedBoostPreview = document.getElementById('balancedBoostPreview');
 	let balancedLogs = []; // [{number, time}]
 	let lastPickWasBalanced = false; // 仅对最终点名有效
 let balancedBoostMax = 2.0; // [1,3]
+    // 智慧统计：{ monthKey: { [id]: {picked, correct, wrong} } }
+    let smartStatsEnabled = false;
+    let smartStats = {};
+    let smartStatsDecayEnabled = true; // 仅在答对后才降低概率
+    const getMonthKey = (ts = Date.now()) => {
+        const d = new Date(ts);
+        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    };
+    // 智慧统计提升强度系数（错得越多被抽概率上升更多）
+    let SMART_WRONG_ALPHA = 2.0;
+    let SMART_CORRECT_DECAY = 0.6; // 0~1
+
+    // 均衡记录：最简渲染与追加（UI 可选）
+    const renderBalancedLogs = () => {
+        if (!balancedLogList) return; // 当前版本可无 UI
+        balancedLogList.innerHTML = '';
+        if (!Array.isArray(balancedLogs) || balancedLogs.length === 0) {
+            balancedLogEmpty && balancedLogEmpty.classList.remove('hidden');
+            return;
+        }
+        balancedLogEmpty && balancedLogEmpty.classList.add('hidden');
+        // 简单渲染（最多最近20条）
+        const recent = balancedLogs.slice(-20).reverse();
+        recent.forEach(rec => {
+            const row = document.createElement('div');
+            row.className = 'weui-cell';
+            row.innerHTML = `<div class="weui-cell__bd">学号 ${rec.number}</div><div class="weui-cell__ft">${new Date(rec.time).toLocaleString()}</div>`;
+            balancedLogList.appendChild(row);
+        });
+    };
+
+    const appendBalancedLog = (number, time) => {
+        try {
+            balancedLogs.push({ number, time });
+            const key = getMetaKey(currentProfileId) + ':balancedLogs';
+            localStorage.setItem(key, JSON.stringify(balancedLogs));
+            renderBalancedLogs();
+        } catch (_) { /* ignore */ }
+    };
 
 	/** 自适应字号：根据容器可用空间自适应显示学号 **/
 	const isCountdownVisible = () => !!displayCountdown && !displayCountdown.classList.contains('hidden');
@@ -362,6 +426,24 @@ let balancedBoostMax = 2.0; // [1,3]
 			// 标记：本次选择将可能因均衡加成
 			lastPickWasBalanced = true;
 		}
+
+        // 智慧统计：对答错较多的学号提升权重（仅在启用时）
+        if (smartStatsEnabled) {
+            try {
+                const mk = getMonthKey();
+                const data = smartStats[mk] || {};
+                // 错误率或错误次数影响：采用 (1 + wrong / (correct+1)) 的温和因子
+                for (let i = 0; i < candidates.length; i++) {
+                    const id = candidates[i];
+                    const rec = data[id];
+                    if (rec && (rec.wrong > 0 || rec.correct > 0)) {
+                        const rawBoost = 1 + SMART_WRONG_ALPHA * (rec.wrong || 0) / (1 + (rec.correct || 0));
+                        const boost = Math.min(3, Math.max(1, rawBoost));
+                        weights[i] = Math.max(0, weights[i]) * boost;
+                    }
+                }
+            } catch (_) {}
+        }
 		// 已分配总和可>100：允许按比例放大（同时保留未设权重者为0）
 		let total = 0;
 		for (let w of weights) total += Math.max(0, w);
@@ -439,7 +521,11 @@ let balancedBoostMax = 2.0; // [1,3]
 			balancedBoostMax: (function(){
 				const v = inputBalancedBoost ? Number(inputBalancedBoost.value) : balancedBoostMax;
 				return Math.min(3, Math.max(1, Number(v) || 2));
-			})()
+			})(),
+			smartStatsEnabled: !!smartStatsEnabled,
+			smartStatsDecayEnabled: !!smartStatsDecayEnabled,
+			smartWrongAlpha: Number.isFinite(SMART_WRONG_ALPHA) ? SMART_WRONG_ALPHA : 2,
+			smartCorrectDecay: Number.isFinite(SMART_CORRECT_DECAY) ? SMART_CORRECT_DECAY : 0.6
 		};
 		if (currentProfileId) localStorage.setItem(getStateKey(currentProfileId), JSON.stringify(state));
 		// 保存元信息：不重复过期策略与时间戳
@@ -448,6 +534,11 @@ let balancedBoostMax = 2.0; // [1,3]
 			pickedSavedAt: Date.now(),
 		};
 		if (currentProfileId) localStorage.setItem(getMetaKey(currentProfileId), JSON.stringify(meta));
+        // 保存智慧统计数据（按月）
+        try {
+            const key = getMetaKey(currentProfileId)+':smartStats';
+            localStorage.setItem(key, JSON.stringify(smartStats));
+        } catch (_) {}
 	};
 
 	const loadState = () => {
@@ -513,11 +604,32 @@ let balancedBoostMax = 2.0; // [1,3]
 			if (inputBalancedBoost) inputBalancedBoost.value = String(balancedBoostMax);
 			if (balancedBoostPreview) balancedBoostPreview.textContent = `1.00x ~ ${balancedBoostMax.toFixed(2)}x`;
 			lastPickedAtMap = new Map();
+			// 智慧统计参数持久化
+			smartStatsEnabled = !!s.smartStatsEnabled;
+			if (switchSmartStats) switchSmartStats.checked = smartStatsEnabled;
+			smartStatsDecayEnabled = !!s.smartStatsDecayEnabled;
+			if (switchSmartStatsDecay) switchSmartStatsDecay.checked = smartStatsDecayEnabled;
+			if (Number.isFinite(s.smartWrongAlpha)) {
+				SMART_WRONG_ALPHA = Math.max(2, Math.min(5, Number(s.smartWrongAlpha)));
+				if (inputSmartWrongAlpha) { inputSmartWrongAlpha.value = String(SMART_WRONG_ALPHA); inputSmartWrongAlpha.dispatchEvent(new Event('input')); }
+			}
+			if (Number.isFinite(s.smartCorrectDecay)) {
+				SMART_CORRECT_DECAY = Math.max(0, Math.min(1, Number(s.smartCorrectDecay)));
+				if (inputSmartCorrectDecay) { inputSmartCorrectDecay.value = String(SMART_CORRECT_DECAY); inputSmartCorrectDecay.dispatchEvent(new Event('input')); }
+			}
 			if (Array.isArray(s.lastPicked)) {
 				for (const rec of s.lastPicked) {
 					if (rec && Number.isFinite(rec.id) && Number.isFinite(rec.ts)) lastPickedAtMap.set(Math.floor(rec.id), Math.floor(rec.ts));
 				}
 			}
+			// 智慧统计
+			smartStatsEnabled = !!s.smartStatsEnabled;
+			if (switchSmartStats) switchSmartStats.checked = smartStatsEnabled;
+			try {
+				const rawStats = localStorage.getItem(getMetaKey(currentProfileId)+':smartStats');
+				smartStats = rawStats ? JSON.parse(rawStats) : {};
+				if (typeof smartStats !== 'object' || !smartStats) smartStats = {};
+			} catch (_) { smartStats = {}; }
 			// 种子随机已移除
 
 			// 加载过期策略并检查是否需要清空不重复集合
@@ -926,6 +1038,8 @@ let balancedBoostMax = 2.0; // [1,3]
 				const mx = Math.min(3, Math.max(1, Number(balancedBoostMax) || 2));
 				balancedBoostPreview.textContent = `1.00x ~ ${mx.toFixed(2)}x`;
 			}
+			// 同步提示可见性
+			syncSmartHintVisibility();
 		} catch (_) {}
 	};
 
@@ -971,16 +1085,45 @@ let balancedBoostMax = 2.0; // [1,3]
 		isRolling = true;
 		// 先按未滚动状态记录并锁定固定高度，确保开始后不变小
 		setFixedDisplayHeight();
-		startButtons.forEach(b => b.classList.add('hidden'));
-		stopButtons.forEach(b => b.classList.remove('hidden'));
+        startButtons.forEach(b => b.classList.add('hidden'));
+        stopButtons.forEach(b => b.classList.remove('hidden'));
+        // 隐藏结果操作栏
+        if (resultActions) {
+            resultActions.classList.remove('is-show');
+            resultActions.classList.add('hidden');
+        }
 		document.querySelector('.app')?.classList.toggle('rolling', switchAnimate.checked);
 		// 下一帧再锁定一次，确保最终高度稳定
 		requestAnimationFrame(() => lockDisplayBoxHeight());
 		const exclude = excludeSet;
 		const animate = switchAnimate.checked;
 		timerId = setInterval(() => {
-			// 滚动中：若开启掩盖概率，则用均匀随机；否则遵循当前设置
-			const n = sampleInt(min, max, exclude, noRepeat);
+			// 滚动中：使用独立概率模块，实时应用权重/均衡/智慧统计
+			let n = null;
+			if (window.Probability && typeof window.Probability.sample === 'function') {
+				n = window.Probability.sample({
+					min, max,
+					excludeSet: exclude,
+					noRepeat,
+					isRolling: true,
+					weightsEnabled,
+					weightsMaskEnabled,
+					weightMap,
+					balancedEnabled,
+					lastPickedAtMap,
+					balancedBoostMax,
+					smartStatsEnabled,
+					smartStats,
+                    smartStatsDecayEnabled,
+                    alphaOverride: SMART_WRONG_ALPHA,
+                    correctDecayOverride: SMART_CORRECT_DECAY,
+					pickedSet,
+					weightsIgnoreNoRepeat,
+				});
+			} else {
+				// 兜底：旧实现
+				n = sampleInt(min, max, exclude, noRepeat);
+			}
 			updateDisplay(n);
 		}, animate ? 60 : 100);
 	};
@@ -988,8 +1131,8 @@ let balancedBoostMax = 2.0; // [1,3]
 	const stopRoll = () => {
 		if (!isRolling) return;
 		isRolling = false;
-		startButtons.forEach(b => b.classList.remove('hidden'));
-		stopButtons.forEach(b => b.classList.add('hidden'));
+        startButtons.forEach(b => b.classList.remove('hidden'));
+        stopButtons.forEach(b => b.classList.add('hidden'));
 		clearInterval(timerId);
 		timerId = null;
 		document.querySelector('.app')?.classList.remove('rolling');
@@ -1012,17 +1155,26 @@ let balancedBoostMax = 2.0; // [1,3]
 		const noRepeat = switchNoRepeat.checked;
 		// 停止时：若开启掩盖概率，最终结果必须按权重/均衡抽取
 		let n = null;
-		if (weightsMaskEnabled && (weightsEnabled || balancedEnabled)) {
-			// 强制按权重：临时置 true 并忽略 rolling 状态
-			const prev = isRolling; isRolling = false;
-			n = (function weightedPick(){
-				const candidates = [];
-				for (let i=min;i<=max;i++){ if(!excludeSet.has(i)) candidates.push(i); }
-				if (candidates.length===0) return null;
-				// 快路径：复用 sampleInt 的加权逻辑
-				return sampleInt(min, max, excludeSet, noRepeat);
-			})();
-			isRolling = prev;
+		if (window.Probability && typeof window.Probability.sample === 'function') {
+			n = window.Probability.sample({
+				min, max,
+				excludeSet,
+				noRepeat,
+				isRolling: false, // 停止时强制应用加权（即使开启掩盖）
+				weightsEnabled,
+				weightsMaskEnabled,
+				weightMap,
+				balancedEnabled,
+				lastPickedAtMap,
+				balancedBoostMax,
+				smartStatsEnabled,
+				smartStats,
+                smartStatsDecayEnabled,
+                alphaOverride: SMART_WRONG_ALPHA,
+                correctDecayOverride: SMART_CORRECT_DECAY,
+				pickedSet,
+				weightsIgnoreNoRepeat,
+			});
 		} else {
 			n = sampleInt(min, max, excludeSet, noRepeat);
 		}
@@ -1045,6 +1197,8 @@ let balancedBoostMax = 2.0; // [1,3]
 			time: new Date().toLocaleString(),
 		};
 		pickedStack.push(item);
+        // 记录一次被抽到
+        try { recordSmartStats(n, 'picked'); } catch (_) {}
 		try { lastPickedAtMap.set(n, Date.now()); } catch (_) {}
 		// 若标记了均衡影响，则写入记录
 		try {
@@ -1057,6 +1211,11 @@ let balancedBoostMax = 2.0; // [1,3]
 		saveState();
 		// 保持容器高度一致（不释放高度）
 		refreshAndLockDisplayBoxHeight();
+        // 显示结果操作栏，缓缓出现
+        if (resultActions) {
+            resultActions.classList.remove('hidden');
+            requestAnimationFrame(() => resultActions.classList.add('is-show'));
+        }
 	};
 
 const resetAll = () => {
@@ -1090,6 +1249,79 @@ const resetAll = () => {
 		const current = Number(displayNumber.textContent);
 		if (Number.isFinite(current)) updateDisplay(current);
 	};
+
+    /** 智慧统计：记录与报表 **/
+    const recordSmartStats = (id, type) => {
+        if (!smartStatsEnabled) return;
+        const key = getMonthKey();
+        if (!smartStats[key]) smartStats[key] = {};
+        if (!smartStats[key][id]) smartStats[key][id] = { picked: 0, correct: 0, wrong: 0 };
+        smartStats[key][id].picked += (type === 'picked' ? 1 : 0);
+        if (type === 'correct') smartStats[key][id].correct += 1;
+        if (type === 'wrong') smartStats[key][id].wrong += 1;
+        saveState();
+    };
+
+    const openSmartStats = () => {
+        if (!smartStatsSheet) return;
+        smartStatsSheet.classList.remove('hidden');
+        requestAnimationFrame(() => smartStatsSheet.classList.add('is-open'));
+        document.body.style.overflow = 'hidden';
+        // 设置标题：x班 智慧统计（基于当前班级名称）
+        try {
+            const prof = profilesList.find(p => p.id === currentProfileId);
+            const title = prof && prof.name ? `${prof.name} 智慧统计` : '智慧统计';
+            const header = document.getElementById('smartStatsHeader');
+            if (header) header.firstChild && (header.firstChild.nodeValue = title);
+        } catch (_) {}
+        renderSmartStats();
+    };
+    const closeSmartStats = () => {
+        if (!smartStatsSheet) return;
+        smartStatsSheet.classList.remove('is-open');
+        setTimeout(() => smartStatsSheet.classList.add('hidden'), 280);
+        document.body.style.overflow = '';
+    };
+
+    const renderSmartStats = () => {
+        if (!smartStatsTopPicked || !smartStatsTopCorrect || !smartStatsTopWrong) return;
+        const mk = getMonthKey();
+        if (smartStatsMonthTitle) smartStatsMonthTitle.textContent = `${mk} 统计`;
+        const data = smartStats[mk] || {};
+        const rows = Object.entries(data).map(([id, rec]) => ({ id: Number(id), ...rec }));
+        const totalPicked = rows.reduce((s, x) => s + (x.picked || 0), 0) || 0;
+        const topN = (arr, key) => {
+            const filtered = key === 'correct' ? arr.filter(x => (x.correct||0) > 0) : arr;
+            return filtered.slice().sort((a,b) => (b[key]||0)-(a[key]||0)).slice(0,3);
+        };
+        const renderList = (el, list, key) => {
+            if (!el) return;
+            el.innerHTML = '';
+            // 列表头说明已移动到标题右侧，这里不再添加
+            if (list.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'weui-cell';
+                empty.innerHTML = '<div class="weui-cell__bd" style="color:var(--muted);">暂无数据</div>';
+                el.appendChild(empty);
+                return;
+            }
+            list.forEach((rec, idx) => {
+                const row = document.createElement('div');
+                row.className = 'weui-cell';
+                const name = rosterMap.get(rec.id) || '';
+                const picked = rec.picked || 0;
+                const correct = rec.correct || 0;
+                const pickedRate = totalPicked > 0 ? Math.round(picked / totalPicked * 100) : 0;
+                const accRate = picked > 0 ? Math.round(correct / picked * 100) : 0;
+                const right = key === 'picked' ? `${picked}` : `${rec[key]||0}`;
+                row.innerHTML = `<div class=\"weui-cell__bd\">#${idx+1} 学号 ${rec.id} ${name ? '· '+name : ''}</div><div class=\"weui-cell__ft\">${right}（${pickedRate}% , ${accRate}%）</div>`;
+                el.appendChild(row);
+            });
+        };
+        renderList(smartStatsTopPicked, topN(rows, 'picked'), 'picked');
+        renderList(smartStatsTopCorrect, topN(rows, 'correct'), 'correct');
+        renderList(smartStatsTopWrong, topN(rows, 'wrong'), 'wrong');
+    };
 
 	/** 自定义名单：辅助工具 **/
 	const { parseRosterLines, normalizeRoster, sortRosterById, sortRosterByName, dedupeRosterById, trimRosterEmptyLines } = window.Roster;
@@ -1172,7 +1404,7 @@ const resetAll = () => {
 
 		if (browserInfoEl) browserInfoEl.textContent = `${kernel || 'Unknown'} · ${os || 'Unknown OS'}`;
 		if (versionEl) {
-			versionEl.textContent = 'v3.1.3';
+			versionEl.textContent = 'v3.1.4';
 		}
 		if (copyrightEl) {
 			const year = new Date().getFullYear();
@@ -1321,6 +1553,64 @@ const resetAll = () => {
     try { saveState(); } catch (_) {}
     closeTheme();
   });
+
+    // 结果操作栏事件
+    btnMarkCorrect?.addEventListener('click', () => {
+        const n = Number(displayNumber?.textContent);
+        if (!Number.isFinite(n)) return;
+        try { recordSmartStats(n, 'correct'); } catch (_) {}
+        // 操作后隐藏操作栏
+        if (resultActions) { resultActions.classList.remove('is-show'); setTimeout(()=>resultActions.classList.add('hidden'), 240); }
+    });
+    btnMarkWrong?.addEventListener('click', () => {
+        const n = Number(displayNumber?.textContent);
+        if (!Number.isFinite(n)) return;
+        try { recordSmartStats(n, 'wrong'); } catch (_) {}
+        if (resultActions) { resultActions.classList.remove('is-show'); setTimeout(()=>resultActions.classList.add('hidden'), 240); }
+    });
+    btnMarkSkip?.addEventListener('click', () => {
+        if (resultActions) { resultActions.classList.remove('is-show'); setTimeout(()=>resultActions.classList.add('hidden'), 240); }
+    });
+
+    // 智慧统计弹窗事件
+    btnOpenSmartStats?.addEventListener('click', openSmartStats);
+    btnSmartStatsClose?.addEventListener('click', closeSmartStats);
+    btnSmartStatsOk?.addEventListener('click', closeSmartStats);
+    switchSmartStats?.addEventListener('change', () => { smartStatsEnabled = !!switchSmartStats.checked; saveState(); });
+    switchSmartStatsDecay?.addEventListener('change', () => { smartStatsDecayEnabled = !!switchSmartStatsDecay.checked; saveState(); });
+    inputSmartWrongAlpha?.addEventListener('input', () => {
+        const a = Math.max(2, Math.min(5, Number(inputSmartWrongAlpha.value) || 2));
+        SMART_WRONG_ALPHA = a;
+        if (smartWrongAlphaPreview) smartWrongAlphaPreview.textContent = `${a.toFixed(2)}x`;
+        const p = ((a - 2) / 3) * 100; // 2~5 -> 0~100
+        inputSmartWrongAlpha.style.setProperty('--_val', p + '%');
+    });
+    inputSmartWrongAlpha?.addEventListener('change', () => { saveState(); });
+    inputSmartCorrectDecay?.addEventListener('input', () => {
+        const d = Math.max(0, Math.min(1, Number(inputSmartCorrectDecay.value) || 0));
+        SMART_CORRECT_DECAY = d;
+        if (smartCorrectDecayPreview) smartCorrectDecayPreview.textContent = d.toFixed(2);
+        inputSmartCorrectDecay.style.setProperty('--_val', (d * 100) + '%');
+    });
+    inputSmartCorrectDecay?.addEventListener('change', () => { saveState(); });
+
+    // 重置智慧统计与权重
+    document.getElementById('btnSmartReset')?.addEventListener('click', () => {
+        if (!confirm('确定要重置智慧统计与权重吗？')) return;
+        // 清空统计
+        try { smartStats = {}; localStorage.setItem(getMetaKey(currentProfileId)+':smartStats', '{}'); } catch (_) {}
+        // 重置强度
+        SMART_WRONG_ALPHA = 2.0; SMART_CORRECT_DECAY = 0.6; smartStatsDecayEnabled = false;
+        if (inputSmartWrongAlpha) { inputSmartWrongAlpha.value = '2'; inputSmartWrongAlpha.dispatchEvent(new Event('input')); }
+        if (inputSmartCorrectDecay) { inputSmartCorrectDecay.value = '0.6'; inputSmartCorrectDecay.dispatchEvent(new Event('input')); }
+        if (switchSmartStatsDecay) { switchSmartStatsDecay.checked = false; }
+        // 清空显式权重
+        weightMap = new Map();
+        renderWeightsList && renderWeightsList();
+        updateWeightsTotal && updateWeightsTotal();
+        saveState();
+        alert('已重置。');
+    });
 	btnWeightsClose?.addEventListener('click', closeWeights);
 	btnWeightsCancel?.addEventListener('click', closeWeights);
 	btnWeightsSave?.addEventListener('click', () => {
@@ -1504,6 +1794,9 @@ btnClearPicked?.addEventListener('click', () => {
 inputBalancedBoost?.addEventListener('input', () => {
 	const mx = Math.min(3, Math.max(1, Number(inputBalancedBoost.value) || 2));
 	balancedBoostPreview && (balancedBoostPreview.textContent = `1.00x ~ ${mx.toFixed(2)}x`);
+	// 更新背景进度条百分比，与自动时长滑条一致（范围 1-3 → 百分比）
+	const p = (mx - 1) / 2 * 100;
+	inputBalancedBoost.style.setProperty('--_val', p + '%');
 });
 inputBalancedBoost?.addEventListener('change', () => {
 	balancedBoostMax = Math.min(3, Math.max(1, Number(inputBalancedBoost.value) || 2));
@@ -1544,6 +1837,12 @@ inputBalancedBoost?.addEventListener('change', () => {
 			const p = (Number(inputAutoSeconds.value) - 1) / 9 * 100;
 			inputAutoSeconds.style.setProperty('--_val', p + '%');
 		}
+	// 初始化均衡强度滑条背景
+	if (inputBalancedBoost) {
+		const mx = Math.min(3, Math.max(1, Number(inputBalancedBoost.value) || 2));
+		const p2 = (mx - 1) / 2 * 100;
+		inputBalancedBoost.style.setProperty('--_val', p2 + '%');
+	}
 	});
 
 	textareaRoster?.addEventListener('input', () => {
@@ -1592,6 +1891,15 @@ inputBalancedBoost?.addEventListener('change', () => {
 		const p = (Number(inputAutoSeconds.value) - 1) / 9 * 100;
 		inputAutoSeconds.style.setProperty('--_val', p + '%');
 	}
+  // 初始化智慧滑条背景
+  if (inputSmartWrongAlpha) {
+    const a = Math.max(2, Math.min(5, Number(inputSmartWrongAlpha.value) || 2));
+    inputSmartWrongAlpha.style.setProperty('--_val', ((a - 2)/3*100) + '%');
+  }
+  if (inputSmartCorrectDecay) {
+    const d = Math.max(0, Math.min(1, Number(inputSmartCorrectDecay.value) || 0));
+    inputSmartCorrectDecay.style.setProperty('--_val', (d*100) + '%');
+  }
 	// 初始自适应与高度锁定
 	setDynamicVhVar();
 	refreshAndLockDisplayBoxHeight();
@@ -1612,6 +1920,45 @@ inputBalancedBoost?.addEventListener('change', () => {
 	});
 	// 输入范围变化时，稳定数字最小宽度
 	[inputMin, inputMax].forEach((el) => el?.addEventListener('input', () => requestAnimationFrame(fitDisplayNumber)));
+
+	// —— 智慧统计-不重复提示逻辑 ——
+    const syncSmartHintVisibility = () => {
+        try {
+            const visible = !!(switchNoRepeat && switchNoRepeat.checked);
+            // 使用柔和淡出：先加软隐藏类再延迟真正隐藏
+            const applySoftHide = (el, show, container) => {
+                if (!el) return;
+                if (show) {
+                    container && container.classList.remove('is-hidden-soft');
+                    container && container.classList.remove('hidden');
+                    el.classList.remove('is-hidden-soft');
+                    el.classList.remove('hidden');
+                } else {
+                    el.classList.add('is-hidden-soft');
+                    container && container.classList.add('is-hidden-soft');
+                    setTimeout(() => { el.classList.add('hidden'); container && container.classList.add('hidden'); }, 400);
+                }
+            };
+            applySoftHide(hintDisableNoRepeat, visible, null);
+            applySoftHide(hintDisableNoRepeatTop, visible, hintDisableNoRepeatTopRow);
+        } catch (_) {}
+    };
+    // 点击“立即去关闭” -> 直接关闭开关并保存（两个位置共用）
+    const handleDisableClick = (e) => {
+        e && e.preventDefault();
+        if (switchNoRepeat) {
+            switchNoRepeat.checked = false;
+            saveState();
+            syncSmartHintVisibility();
+            try { showBanner && showBanner('已关闭“不重复点到”', 'red', 5000, { showClose: false, slowFade: true }); } catch (_) { try { alert('已关闭“不重复点到”'); } catch (_) {} }
+        }
+    };
+    actionDisableNoRepeat?.addEventListener('click', handleDisableClick);
+    actionDisableNoRepeatTop?.addEventListener('click', handleDisableClick);
+    // 当开关变化时，同步提示可见性
+    switchNoRepeat?.addEventListener('change', () => { syncSmartHintVisibility(); });
+	// 初次同步一次
+	syncSmartHintVisibility();
 
 	// 放开最小/最大输入：允许任意字符，解析时再校验
 })();

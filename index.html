@@ -32,6 +32,7 @@
     <script defer src="assets/js/whatsnew.js"></script>
     
     <script defer src="assets/js/confetti.js"></script>
+    <script defer src="assets/js/probability.js"></script>
     <script defer src="assets/js/app.js"></script>
     <script>
         // 简单防抖，避免 iOS PWA 双击放大
@@ -97,6 +98,13 @@
                     <div id="displayCountdown" class="display__countdown hidden">—</div>
                 </div>
 
+                <!-- 抽取结果操作栏：答对/答错/跳过（停止后缓缓显示） -->
+                <div id="resultActions" class="result-actions hidden" aria-label="结果操作">
+                    <button id="btnMarkCorrect" class="weui-btn weui-btn_mini weui-btn_primary">✔ 答对了</button>
+                    <button id="btnMarkWrong" class="weui-btn weui-btn_mini weui-btn_warn">❌ 答错了</button>
+                    <button id="btnMarkSkip" class="weui-btn weui-btn_mini weui-btn_default">→ 跳过</button>
+                </div>
+
                 <div class="controls controls--bottom">
                     <div class="controls__primary">
                         <button class="weui-btn weui-btn_primary btn-ripple js-ripple js-start">开始滚动</button>
@@ -125,7 +133,7 @@
                 <span class="dot">·</span>
                 <span>浏览器：<span id="browserInfo">-</span></span>
                 <span class="dot">·</span>
-                <span>版本：v3.1.3</span>
+                <span>版本：v3.1.4</span>
                 <span class="dot">·</span>
                 <span>台州王浩哥集团有限公司 © 2025</span>
                 <span class="dot">·</span>
@@ -305,12 +313,14 @@
         <div class="sheet">
             <div class="sheet__header">新改进<button id="btnWhatsNewClose" class="sheet__close" aria-label="关闭">×</button></div>
             <div class="sheet__content">
-                <div class="weui-cells__title">当前版本：v3.1.3</div>
+                <div class="weui-cells__title">当前版本：v3.1.4</div>
                 <div class="weui-cells">
-                    <div class="weui-cell">新增智能抽取设置</div>
-                    <div class="weui-cell">修复没启用启用概率权重状态下还是会应用概率设置的BUG</div>
-                    <div class="weui-cell">修复其他已知问题</div>
-                    <div class="weui-cell">2025年9月21日  更新 感谢您的支持</div>
+                    <div class="weui-cell">均衡强度滑条与自动抽人滑条样式行为统一</div>
+                    <div class="weui-cell">移除本地字体依赖：Windows 等线、iOS 系统默认、Android Roboto</div>
+                    <div class="weui-cell">修复若干细节问题与样式一致性</div>
+                    <div class="weui-cell">新增智慧统计功能</div>
+                    <div class="weui-cell">修复了一些已知问题</div>
+                    <div class="weui-cell">2025年9月22日  更新 感谢您的支持</div>
 
                 </div>
             </div>
@@ -375,11 +385,59 @@
                         <div style="margin-top:6px;color:var(--muted);">当前：<span id="balancedBoostPreview">1.00x ~ 2.00x</span></div>
                     </div>
                 </div>
+                <div class="weui-cells__title">智慧统计</div>
+                <div id="hintDisableNoRepeatTopRow" class="weui-cell js-hint-row">
+                    <div class="weui-cell__bd">
+                        <p id="hintDisableNoRepeatTop" class="js-hint-disable-no-repeat" style="color: #0078D4;font-family: KaiTi, STKaiti, 'Kaiti SC', 'DFKai-SB', serif;">警告！需要关闭“不重复点到”功能时才可以显示，不关的情况下只会统计数据而不会显示！ <a id="actionDisableNoRepeatTop" class="js-action-disable-no-repeat" href="#" style="color:#0078D4;text-decoration: underline; font-family: inherit;">立即去关闭</a></p>
+                    </div>
+                </div>
+                <label class="weui-cell weui-cell_switch">
+                    <div class="weui-cell__bd" data-search="智慧 统计 正确 错误 概率 提升">启用智慧统计（答错多的概率上升）</div>
+                    <div class="weui-cell__ft">
+                        <input id="switchSmartStats" class="weui-switch" type="checkbox">
+                    </div>
+                </label>
+                <label class="weui-cell weui-cell_switch">
+                    <div class="weui-cell__bd" data-search="智慧 统计 概率 下降 正确 优秀">下降优秀同学被提问到的概率（答对多时略降）</div>
+                    <div class="weui-cell__ft">
+                        <input id="switchSmartStatsDecay" class="weui-switch" type="checkbox">
+                    </div>
+                </label>
+                <div class="weui-cell">
+                    <div class="weui-cell__bd">
+                        <label for="inputSmartWrongAlpha" class="weui-label">错题提升强度</label>
+                        <input id="inputSmartWrongAlpha" type="range" min="2" max="5" step="0.1" value="2" style="width:100%">
+                        <div style="margin-top:6px;color:var(--muted);">当前：<span id="smartWrongAlphaPreview">2.00x</span></div>
+                    </div>
+                </div>
+                <div class="weui-cell">
+                    <div class="weui-cell__bd">
+                        <label for="inputSmartCorrectDecay" class="weui-label">正确下降强度</label>
+                        <input id="inputSmartCorrectDecay" type="range" min="0" max="1" step="0.05" value="0.6" style="width:100%">
+                        <div style="margin-top:6px;color:var(--muted);">当前：<span id="smartCorrectDecayPreview">0.60</span></div>
+                    </div>
+                </div>
+                <div class="weui-cell">
+                    <div class="weui-cell__bd" style="color:var(--muted);">重置智慧统计与权重（清空本月统计并重置强度与显式权重）</div>
+                    <div class="weui-cell__ft" style="white-space:nowrap;">
+                        <button id="btnSmartReset" class="weui-btn weui-btn_mini weui-btn_warn">重置</button>
+                    </div>
+                </div>
+                <div class="weui-cell">
+                    <div class="weui-cell__bd" data-search="统计 报表 本月 排行">查看智慧统计报表</div>
+                    <div class="weui-cell__ft" style="white-space: nowrap;">
+                        <button id="btnOpenSmartStats" class="weui-btn weui-btn_mini weui-btn_default" title="打开">打开</button>
+                    </div>
+                </div>
                 <div class="weui-cells__title">使用说明</div>
                 <div class="weui-cells">
                     <div class="weui-cell">
                         <div class="weui-cell__bd" style="color:var(--muted);">
                             <p>均衡模式会自动照顾久未被点到的同学；与“概率权重”叠加生效。</p>
+                            <p>智慧统计：开启后，系统会记录每次抽取结果（被抽、答对、答错）。停止抽取后，底部会出现“✔答对了/❌答错了/→跳过”按钮用于标记结果。</p>
+                            <p>被抽概率与正确率：报表中会按本月数据展示每个学号的“抽到概率(%)、正确率(%)”。</p>
+                            <p>智能提升：答错越多的学号会得到更高的被抽概率提升，帮助关注薄弱同学（与均衡/权重叠加）。</p>
+                            <p id="hintDisableNoRepeat" class="js-hint-disable-no-repeat" style="color: #0078D4;font-family: KaiTi, STKaiti, 'Kaiti SC', 'DFKai-SB', serif;">警告！需要关闭“不重复点到”功能时才可以显示，不关的情况下只会统计数据而不会显示！ <a id="actionDisableNoRepeat" class="js-action-disable-no-repeat" href="#" style="color:#0078D4;text-decoration: underline; font-family: inherit;">立即去关闭</a></p>
                         </div>
                     </div>
                 </div>
@@ -429,6 +487,25 @@
                 <button id="btnRosterCancel" class="weui-btn weui-btn_default">取消</button>
                 <button id="btnRosterClear" class="weui-btn weui-btn_warn">清空</button>
                 <button id="btnRosterSave" class="weui-btn weui-btn_primary">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 智慧统计弹窗 -->
+    <div id="smartStatsSheet" class="weui-mask hidden" role="dialog" aria-modal="true">
+        <div class="sheet">
+            <div class="sheet__header" id="smartStatsHeader">智慧统计<button id="btnSmartStatsClose" class="sheet__close" aria-label="关闭">×</button></div>
+            <div class="sheet__content">
+                <div class="weui-cells__title" id="smartStatsMonthTitle">本月统计</div>
+                <div class="weui-cells__title stats-title"><span>被抽最多（前三）</span><span class="stats-hint">实时抽到概率 · 历史正确率</span></div>
+                <div class="weui-cells" id="smartStatsTopPicked"></div>
+                <div class="weui-cells__title stats-title"><span>答对最多（前三）</span><span class="stats-hint">实时抽到概率 · 历史正确率</span></div>
+                <div class="weui-cells" id="smartStatsTopCorrect"></div>
+                <div class="weui-cells__title stats-title"><span>答错最多（前三）</span><span class="stats-hint">实时抽到概率 · 历史正确率</span></div>
+                <div class="weui-cells" id="smartStatsTopWrong"></div>
+            </div>
+            <div class="sheet__footer">
+                <button id="btnSmartStatsOk" class="weui-btn weui-btn_primary">知道了</button>
             </div>
         </div>
     </div>

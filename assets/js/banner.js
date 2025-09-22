@@ -7,14 +7,17 @@
 	if (!topBanner || !topBannerText) return;
 
 	function hide(){
-		topBanner.classList.remove('is-show');
-		setTimeout(() => topBanner.classList.add('hidden'), 300);
+    topBanner.classList.remove('is-show');
+    const delay = topBanner.classList.contains('banner--slow') ? 620 : 300;
+    setTimeout(() => topBanner.classList.add('hidden'), delay);
 	}
 
 	function show(message, color = 'blue', durationMs = 3000, options = {}){
-		try {
-			topBanner.classList.remove('banner--blue', 'banner--red');
-			topBanner.classList.add(color === 'red' ? 'banner--red' : 'banner--blue');
+    try {
+        topBanner.classList.remove('banner--blue', 'banner--red', 'banner--kaiti', 'banner--slow');
+        topBanner.classList.add(color === 'red' ? 'banner--red' : 'banner--blue');
+        if (options && (options.font === 'kaiti' || options.kaiti)) topBanner.classList.add('banner--kaiti');
+        if (options && options.slowFade) topBanner.classList.add('banner--slow');
 			topBannerText.textContent = String(message || '');
 			const rect = headerEl ? headerEl.getBoundingClientRect() : { bottom: 0 };
 			const top = Math.max(0, rect.bottom + 8 + (window.scrollY || window.pageYOffset || 0));

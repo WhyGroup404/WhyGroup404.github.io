@@ -29,15 +29,7 @@
 
 /* 删除自适应视口变量 */
 
-/* 本地中文字体（请将 SC.ttf 放到 assets/fonts/SC.ttf 或项目根目录） */
-@font-face {
-	font-family: "SC";
-	src: url("../fonts/SC.ttf") format("truetype"),
-		 url("../../SC.ttf") format("truetype");
-	font-weight: 400;
-	font-style: normal;
-	font-display: swap;
-}
+/* 已移除本地字体文件依赖，统一使用系统字体栈 */
 
 .theme-dark {
     /* 提亮深色模式整体氛围 */
@@ -55,10 +47,21 @@ html, body {
 	height: 100%;
 	background: var(--bg);
 	color: var(--text);
-	font-family: "SC", "Segoe UI", -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Helvetica, Arial, sans-serif;
+	/* Windows: DengXian; iOS: default system; Android: Roboto; others fallback */
+	font-family: "DengXian", -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", system-ui, "Roboto", "Noto Sans CJK SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", Helvetica, Arial, sans-serif;
 	overflow-x: hidden; /* 防止小屏横向抖动 */
     /* 防止某些浏览器缩放后出现 0.5px 级别的右侧位移 */
     position: relative;
+}
+
+/* Windows 下标题、小标题优先使用加粗微软雅黑（其他平台自动回退） */
+h1, h2, h3, h4, h5, h6,
+.brand__title,
+.card__header,
+.weui-cells__title,
+.sheet__header {
+	font-family: "Microsoft YaHei", "DengXian", -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", system-ui, "Roboto", "Noto Sans CJK SC", "PingFang SC", "Hiragino Sans GB", Helvetica, Arial, sans-serif;
+	font-weight: 700;
 }
 
 /* 移动端左右对称：所有主要容器按安全区域留白（避免只左侧留空） */
@@ -192,6 +195,8 @@ select.weui-select { all: revert; }
 }
 .banner__inner { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; }
 .banner__text { display: block; font-weight: 700; white-space: normal; word-break: break-word; }
+.banner--kaiti .banner__text { font-family: KaiTi, STKaiti, "Kaiti SC", "DFKai-SB", serif; }
+.banner--slow { transition: transform .62s ease, opacity .62s ease; }
 .banner__close {
 	pointer-events: auto; /* 允许点击关闭按钮 */
 	appearance: none; border: 0; background: transparent; color: currentColor; font-size: 18px; line-height: 1; width: 28px; height: 28px; cursor: pointer;
@@ -351,6 +356,22 @@ input.weui-input[type="number"] { -moz-appearance: textfield; }
 	grid-template-rows: auto 1fr auto; /* label / number / name */
 	align-items: center;
 }
+
+/* 结果操作栏：答对/答错/跳过（停止后缓缓显现） */
+#resultActions.result-actions { display:flex; gap:10px; align-items:center; justify-content:center; opacity:0; transform: translateY(-6px); transition: opacity .24s ease, transform .24s ease; }
+#resultActions.result-actions.is-show { opacity:1; transform: translateY(0); }
+#resultActions .weui-btn { min-width: 92px; }
+
+/* 智慧统计弹窗标题行：左右对齐显示提示文案 */
+.stats-title { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.stats-title .stats-hint { font-size: 12px; color: var(--muted); font-weight: 500; }
+
+/* 智慧统计蓝色提示：缓慢淡隐/淡现 */
+.js-hint-disable-no-repeat { transition: opacity .4s ease; }
+.js-hint-disable-no-repeat.is-hidden-soft { opacity: 0; }
+/* 当需要隐藏整行（weui-cell）以避免残留分割线时 */
+.weui-cell.js-hint-row { transition: opacity .4s ease; }
+.weui-cell.js-hint-row.is-hidden-soft { opacity: 0; }
 
 .display__label {
 	font-size: 13px;
@@ -666,6 +687,41 @@ input[type="range"]#inputAutoSeconds::-webkit-slider-thumb {
 	box-shadow: 0 0 0 3px var(--ring);
 }
 input[type="range"]#inputAutoSeconds:active::-webkit-slider-thumb { border-color: var(--brand-600); }
+
+/* 均衡强度滑条与自动时长滑条保持一致 */
+input[type="range"]#inputBalancedBoost {
+	appearance: none;
+	width: 100%;
+	height: 4px;
+	background: linear-gradient(90deg, var(--brand) var(--_val,50%), color-mix(in srgb, var(--brand-ink) 20%, transparent) 0);
+	border-radius: 999px;
+}
+input[type="range"]#inputBalancedBoost::-webkit-slider-thumb {
+	appearance: none;
+	width: 22px; height: 22px; border-radius: 50%;
+	background: #fff; border: 2px solid var(--brand);
+	box-shadow: 0 0 0 3px var(--ring);
+}
+input[type="range"]#inputBalancedBoost:active::-webkit-slider-thumb { border-color: var(--brand-600); }
+
+/* 智慧统计强度与下降强度滑条统一样式 */
+input[type="range"]#inputSmartWrongAlpha,
+input[type="range"]#inputSmartCorrectDecay {
+	appearance: none;
+	width: 100%;
+	height: 4px;
+	background: linear-gradient(90deg, var(--brand) var(--_val,50%), color-mix(in srgb, var(--brand-ink) 20%, transparent) 0);
+	border-radius: 999px;
+}
+input[type="range"]#inputSmartWrongAlpha::-webkit-slider-thumb,
+input[type="range"]#inputSmartCorrectDecay::-webkit-slider-thumb {
+	appearance: none;
+	width: 22px; height: 22px; border-radius: 50%;
+	background: #fff; border: 2px solid var(--brand);
+	box-shadow: 0 0 0 3px var(--ring);
+}
+input[type="range"]#inputSmartWrongAlpha:active::-webkit-slider-thumb,
+input[type="range"]#inputSmartCorrectDecay:active::-webkit-slider-thumb { border-color: var(--brand-600); }
 
 /* 自定义输入（权重设置页更显眼的输入框） */
 .rc-input {
