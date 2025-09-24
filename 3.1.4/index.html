@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
-    <title>在线学号点名3.1.5</title>
+    <title>zzy - 学号点名</title>
     <link rel="stylesheet" href="weui-master/dist/style/weui.min.css">
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="assets/css/display.css">
@@ -45,10 +45,7 @@
         <header class="app__header">
             <div class="app__brand">
                 <span class="brand__logo">🎯</span>
-                <div class="brand__text">
-                    <h1 class="brand__title">学号随机点名</h1>
-                    <div class="brand__subtitle">Random roll call</div>
-                </div>
+                <h1 class="brand__title">学号随机点名</h1>
             </div>
             <button id="btnOpenSettings" class="app__settings-btn settings-btn" aria-label="打开设置">
                 <svg class="settings-btn__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -136,9 +133,11 @@
                 <span class="dot">·</span>
                 <span>浏览器：<span id="browserInfo">-</span></span>
                 <span class="dot">·</span>
-                <span>版本：v3.1.5</span>
+                <span>版本：v3.1.4</span>
                 <span class="dot">·</span>
                 <span>台州王浩哥集团有限公司 © 2025</span>
+                <span class="dot">·</span>
+                <span>赠送:詹珍怡及其所有朋友(请认准:<a href="https://zhanzhenyi.cn" target="_blank" style="color: var(--brand);">zhanzhenyi.cn</a>)欢迎推荐此网站！</span>
             </div>
         </footer>
     </div>
@@ -175,7 +174,7 @@
                             <a class="weui-search-bar__cancel-btn" id="settingsSearchCancel">取消</a>
                         </div>
                     </div>
-                    <button id="btnSettingsClose" class="sheet__close" aria-label="关闭">×</button>
+                    <button id="btnSettingsClose" class="sheet__close" aria-label="关闭" style="margin-left: 8px; font-size: 24px; border: none; background: none; color: var(--text);">×</button>
                 </div>
             </div>
             <div class="sheet__content">
@@ -301,34 +300,10 @@
                         </button>
                     </div>
                 </div>
-                <div class="weui-cell">
-                    <div class="weui-cell__bd" data-search="总览 报表 概率 真实 100%">查看总览报表（当前范围真实概率分配）</div>
-                    <div class="weui-cell__ft" style="white-space: nowrap;">
-                        <button id="btnOpenOverview" class="weui-btn weui-btn_mini weui-btn_default btn-icon" title="打开">
-                            <img class="open-icon open-icon--light" src="assets/img/open/Open_Black.png" alt="" aria-hidden="true">
-                            <img class="open-icon open-icon--dark" src="assets/img/open/Open_White.png" alt="" aria-hidden="true">
-                            打开
-                        </button>
-                    </div>
-                </div>
             </div>
             <div class="sheet__footer">
                 <button id="btnSettingsCancel" class="weui-btn weui-btn_default">取消</button>
                 <button id="btnSettingsSave" class="weui-btn weui-btn_primary">保存</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 概率总览报表弹窗 -->
-    <div id="overviewSheet" class="weui-mask hidden" role="dialog" aria-modal="true">
-        <div class="sheet">
-            <div class="sheet__header">概率总览报表<button id="btnOverviewClose" class="sheet__close" aria-label="关闭">×</button></div>
-            <div class="sheet__content">
-                <div class="weui-cells__title">当前范围内每个学号的实时抽中概率（总和=100%）</div>
-                <div class="weui-cells" id="overviewList"></div>
-            </div>
-            <div class="sheet__footer">
-                <button id="btnOverviewOk" class="weui-btn weui-btn_primary">知道了</button>
             </div>
         </div>
     </div>
@@ -338,14 +313,14 @@
         <div class="sheet">
             <div class="sheet__header">新改进<button id="btnWhatsNewClose" class="sheet__close" aria-label="关闭">×</button></div>
             <div class="sheet__content">
-                <div class="weui-cells__title">当前版本：v3.1.5  -  ⭐2025/9/24</div>
+                <div class="weui-cells__title">当前版本：v3.1.4</div>
                 <div class="weui-cells">
-                    <div class="weui-cell">新增“概率总览报表”：按当前配置实时计算</div>
-                    <div class="weui-cell">智慧统计优化：概率更真实可控</div>
-                    <div class="weui-cell">概率权重限制：同一范围总和最多 100%，超额弹红色横幅</div>
-                    <div class="weui-cell">兼容性提升，浏览器版本过低时会弹出提示</div>
-                      <div class="weui-cell">页面UI小动</div>
-                    <div class="weui-cell">细节优化与稳定性提升</div>
+                    <div class="weui-cell">均衡强度滑条与自动抽人滑条样式行为统一</div>
+                    <div class="weui-cell">移除本地字体依赖：Windows 等线、iOS 系统默认、Android Roboto</div>
+                    <div class="weui-cell">修复若干细节问题与样式一致性</div>
+                    <div class="weui-cell">新增智慧统计功能</div>
+                    <div class="weui-cell">修复了一些已知问题</div>
+                    <div class="weui-cell">2025年9月22日  更新 感谢您的支持</div>
 
                 </div>
             </div>

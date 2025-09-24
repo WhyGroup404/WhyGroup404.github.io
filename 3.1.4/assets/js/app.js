@@ -71,9 +71,6 @@ const balancedBoostPreview = document.getElementById('balancedBoostPreview');
     const switchSmartStatsDecay = document.getElementById('switchSmartStatsDecay');
     const inputSmartWrongAlpha = document.getElementById('inputSmartWrongAlpha');
     const smartWrongAlphaPreview = document.getElementById('smartWrongAlphaPreview');
-    // 新增：缺失的智慧统计控件引用
-    const inputSmartCorrectDecay = document.getElementById('inputSmartCorrectDecay');
-    const smartCorrectDecayPreview = document.getElementById('smartCorrectDecayPreview');
     const btnOpenSmartStats = document.getElementById('btnOpenSmartStats');
     const smartStatsSheet = document.getElementById('smartStatsSheet');
     const btnSmartStatsClose = document.getElementById('btnSmartStatsClose');
@@ -818,51 +815,18 @@ let balancedBoostMax = 2.0; // [1,3]
 		});
 		row.querySelector('.js-w-percent').addEventListener('input', (e) => {
 			let v = Number(e.target.value);
-			const requested = Number.isFinite(v) ? Math.floor(v) : 0;
 			if (!Number.isFinite(v)) v = 0;
-			v = Math.max(0, Math.min(100, Math.floor(v)));
-			// 限制当前范围内总和<=100：计算除当前项外的已分配总和
-			const [min, max] = clampRange(Number(inputMin.value), Number(inputMax.value));
-			const excludeSet = parseExclude(inputExclude.value);
-			const ignoreNR = !!(switchNoRepeat.checked && switchWeightsIgnoreNoRepeat && switchWeightsIgnoreNoRepeat.checked);
-			let totalOther = 0;
-			for (const [id, p] of weightMap.entries()) {
-				if (id === entryId) continue;
-				if (id >= min && id <= max && !excludeSet.has(id) && (!switchNoRepeat.checked || ignoreNR || !pickedSet.has(id))) {
-					totalOther += Math.max(0, Number(p) || 0);
-				}
-			}
-			const allowed = Math.max(0, 100 - totalOther);
-			if (v > allowed) {
-				v = allowed;
-				try { showBanner && showBanner(`超过上限，已自动调整为 ${allowed}%（当前范围最多可分配）`, 'red', 3000, { showClose: true }); } catch (_) {}
-			}
+			v = Math.max(0, Math.min(1000, Math.floor(v)));
 			weightMap.set(entryId, v);
-			if (e.target.value !== String(v)) e.target.value = String(v);
 			updateWeightsTotal();
 			saveState();
 		});
 		row.querySelector('.js-w-percent').addEventListener('blur', (e) => {
-			let vv = Number(e.target.value);
-			if (!Number.isFinite(vv)) vv = 0;
-			vv = Math.max(0, Math.min(100, Math.floor(vv)));
-			// 再次按总和<=100校正
-			const [min, max] = clampRange(Number(inputMin.value), Number(inputMax.value));
-			const excludeSet = parseExclude(inputExclude.value);
-			const ignoreNR = !!(switchNoRepeat.checked && switchWeightsIgnoreNoRepeat && switchWeightsIgnoreNoRepeat.checked);
-			let totalOther = 0;
-			for (const [id, p] of weightMap.entries()) {
-				if (id === entryId) continue;
-				if (id >= min && id <= max && !excludeSet.has(id) && (!switchNoRepeat.checked || ignoreNR || !pickedSet.has(id))) {
-					totalOther += Math.max(0, Number(p) || 0);
-				}
+			const vv = Number(e.target.value);
+			if (!Number.isFinite(vv)) {
+				showTip('百分比需为数字');
+				e.target.value = String(weightMap.get(entryId) || 0);
 			}
-			const allowed = Math.max(0, 100 - totalOther);
-			if (vv > allowed) vv = allowed;
-			weightMap.set(entryId, vv);
-			if (e.target.value !== String(vv)) e.target.value = String(vv);
-			updateWeightsTotal();
-			saveState();
 		});
 		row.querySelector('.js-w-del').addEventListener('click', () => {
 			weightMap.delete(entryId);
@@ -902,13 +866,6 @@ let balancedBoostMax = 2.0; // [1,3]
 			}
 		}
 		weightsTotal.textContent = `${total}%`;
-		// 若超过100%，提示并用红色强调
-		if (total > 100) {
-			weightsTotal.style.color = 'var(--danger, #ef4444)';
-			try { showBanner && showBanner('当前范围内百分比总和超过 100%，请调整', 'red', 3000, { showClose: true }); } catch (_) {}
-		} else {
-			weightsTotal.style.color = '';
-		}
 	};
 
 	const applyRangeBarVisible = () => {
@@ -987,101 +944,6 @@ let balancedBoostMax = 2.0; // [1,3]
 		requestAnimationFrame(() => rosterSheet.classList.add('is-open'));
 		document.body.style.overflow = 'hidden';
 	};
-
-    // —— 概率总览：UI 引用 ——
-    const btnOpenOverview = document.getElementById('btnOpenOverview');
-    const overviewSheet = document.getElementById('overviewSheet');
-    const btnOverviewClose = document.getElementById('btnOverviewClose');
-    const btnOverviewOk = document.getElementById('btnOverviewOk');
-    const overviewList = document.getElementById('overviewList');
-
-    // 计算并渲染总览报表
-    const renderOverview = () => {
-        if (!overviewList) return;
-        overviewList.innerHTML = '';
-        const [min, max] = clampRange(Number(inputMin.value), Number(inputMax.value));
-        const excludeSet = parseExclude(inputExclude.value);
-        const noRepeat = switchNoRepeat.checked;
-        let ids = [];
-        for (let i = min; i <= max; i++) {
-            if (excludeSet.has(i)) continue;
-            if (noRepeat && pickedSet.has(i) && !(weightsEnabled && weightsIgnoreNoRepeat && (Number(weightMap.get(i))||0) > 0)) continue;
-            ids.push(i);
-        }
-        if (ids.length === 0) {
-            const empty = document.createElement('div');
-            empty.className = 'weui-cell';
-            empty.innerHTML = '<div class="weui-cell__bd" style="color:var(--muted);">当前范围内无可选学号</div>';
-            overviewList.appendChild(empty);
-            return;
-        }
-        let probMap = {};
-        try {
-            if (window.Probability && typeof window.Probability.preview === 'function') {
-                const res = window.Probability.preview({
-                    min, max,
-                    excludeSet,
-                    noRepeat,
-                    isRolling: false,
-                    weightsEnabled,
-                    weightsMaskEnabled,
-                    weightMap,
-                    balancedEnabled,
-                    lastPickedAtMap,
-                    balancedBoostMax,
-                    smartStatsEnabled,
-                    smartStats,
-                    smartStatsDecayEnabled,
-                    alphaOverride: SMART_WRONG_ALPHA,
-                    correctDecayOverride: SMART_CORRECT_DECAY,
-                    pickedSet,
-                    weightsIgnoreNoRepeat,
-                });
-                probMap = (res && res.probMap) || {};
-            }
-        } catch (_) { probMap = {}; }
-        // 将概率映射为百分比并校正总和=100（四舍五入+误差修正）
-        const entries = ids.map(id => ({ id, p: Math.max(0, Number(probMap[id] || 0)) }));
-        const sum = entries.reduce((s, x) => s + x.p, 0);
-        let percents = entries.map(x => (sum > 0 ? x.p / sum * 100 : 100 / ids.length));
-        let rounded = percents.map(v => Math.round(v));
-        // 误差校正
-        let diff = 100 - rounded.reduce((s, x) => s + x, 0);
-        if (diff !== 0) {
-            // 依据小数部分进行加减分配
-            const frac = percents.map((v, i) => ({ i, frac: v - Math.floor(v) }));
-            if (diff > 0) {
-                frac.sort((a,b) => b.frac - a.frac);
-                for (let k = 0; k < diff && k < frac.length; k++) rounded[frac[k].i] += 1;
-            } else {
-                frac.sort((a,b) => a.frac - b.frac);
-                for (let k = 0; k < -diff && k < frac.length; k++) { if (rounded[frac[k].i] > 0) rounded[frac[k].i] -= 1; }
-            }
-        }
-        // 渲染
-        ids.forEach((id, idx) => {
-            const row = document.createElement('div');
-            row.className = 'weui-cell';
-            const name = rosterMap.get(id) || '';
-            row.innerHTML = `<div class=\"weui-cell__bd\">学号 ${id}${name ? ' · '+name : ''}</div><div class=\"weui-cell__ft\">${rounded[idx]}%</div>`;
-            overviewList.appendChild(row);
-        });
-    };
-
-    const openOverview = () => {
-        if (!overviewSheet) return;
-        overviewSheet.classList.remove('hidden');
-        requestAnimationFrame(() => overviewSheet.classList.add('is-open'));
-        document.body.style.overflow = 'hidden';
-        renderOverview();
-    };
-
-    const closeOverview = () => {
-        if (!overviewSheet) return;
-        overviewSheet.classList.remove('is-open');
-        setTimeout(() => overviewSheet.classList.add('hidden'), 280);
-        document.body.style.overflow = '';
-    };
 
   // 主题色弹窗
   const openTheme = () => {
@@ -1427,35 +1289,7 @@ const resetAll = () => {
         if (smartStatsMonthTitle) smartStatsMonthTitle.textContent = `${mk} 统计`;
         const data = smartStats[mk] || {};
         const rows = Object.entries(data).map(([id, rec]) => ({ id: Number(id), ...rec }));
-        // 实时概率
-        let probMap = {};
-        try {
-            if (window.Probability && typeof window.Probability.preview === 'function') {
-                const [min, max] = clampRange(Number(inputMin.value), Number(inputMax.value));
-                const excludeSet = parseExclude(inputExclude.value);
-                const noRepeat = switchNoRepeat.checked;
-                const previewRes = window.Probability.preview({
-                    min, max,
-                    excludeSet,
-                    noRepeat,
-                    isRolling: false,
-                    weightsEnabled,
-                    weightsMaskEnabled,
-                    weightMap,
-                    balancedEnabled,
-                    lastPickedAtMap,
-                    balancedBoostMax,
-                    smartStatsEnabled,
-                    smartStats,
-                    smartStatsDecayEnabled,
-                    alphaOverride: SMART_WRONG_ALPHA,
-                    correctDecayOverride: SMART_CORRECT_DECAY,
-                    pickedSet,
-                    weightsIgnoreNoRepeat,
-                });
-                probMap = (previewRes && previewRes.probMap) || {};
-            }
-        } catch (_) { probMap = {}; }
+        const totalPicked = rows.reduce((s, x) => s + (x.picked || 0), 0) || 0;
         const topN = (arr, key) => {
             const filtered = key === 'correct' ? arr.filter(x => (x.correct||0) > 0) : arr;
             return filtered.slice().sort((a,b) => (b[key]||0)-(a[key]||0)).slice(0,3);
@@ -1463,6 +1297,7 @@ const resetAll = () => {
         const renderList = (el, list, key) => {
             if (!el) return;
             el.innerHTML = '';
+            // 列表头说明已移动到标题右侧，这里不再添加
             if (list.length === 0) {
                 const empty = document.createElement('div');
                 empty.className = 'weui-cell';
@@ -1476,10 +1311,10 @@ const resetAll = () => {
                 const name = rosterMap.get(rec.id) || '';
                 const picked = rec.picked || 0;
                 const correct = rec.correct || 0;
-                const probPercent = Math.round(((probMap[rec.id] || 0) * 100));
+                const pickedRate = totalPicked > 0 ? Math.round(picked / totalPicked * 100) : 0;
                 const accRate = picked > 0 ? Math.round(correct / picked * 100) : 0;
                 const right = key === 'picked' ? `${picked}` : `${rec[key]||0}`;
-                row.innerHTML = `<div class=\"weui-cell__bd\">#${idx+1} 学号 ${rec.id} ${name ? '· '+name : ''}</div><div class=\"weui-cell__ft\">${right}（${probPercent}% , ${accRate}%）</div>`;
+                row.innerHTML = `<div class=\"weui-cell__bd\">#${idx+1} 学号 ${rec.id} ${name ? '· '+name : ''}</div><div class=\"weui-cell__ft\">${right}（${pickedRate}% , ${accRate}%）</div>`;
                 el.appendChild(row);
             });
         };
@@ -1569,7 +1404,7 @@ const resetAll = () => {
 
 		if (browserInfoEl) browserInfoEl.textContent = `${kernel || 'Unknown'} · ${os || 'Unknown OS'}`;
 		if (versionEl) {
-			versionEl.textContent = 'v3.1.5';
+			versionEl.textContent = 'v3.1.4';
 		}
 		if (copyrightEl) {
 			const year = new Date().getFullYear();
@@ -1718,11 +1553,6 @@ const resetAll = () => {
     try { saveState(); } catch (_) {}
     closeTheme();
   });
-
-  // 概率总览：事件绑定
-  btnOpenOverview?.addEventListener('click', openOverview);
-  btnOverviewClose?.addEventListener('click', closeOverview);
-  btnOverviewOk?.addEventListener('click', closeOverview);
 
     // 结果操作栏事件
     btnMarkCorrect?.addEventListener('click', () => {
@@ -2129,40 +1959,6 @@ inputBalancedBoost?.addEventListener('change', () => {
     switchNoRepeat?.addEventListener('change', () => { syncSmartHintVisibility(); });
 	// 初次同步一次
 	syncSmartHintVisibility();
-
-	// —— 旧版浏览器提示（Chromium < 89 时常驻可关闭横幅） ——
-	const EDGE_DOWNLOAD_URL = 'https://www.microsoft.com/zh-cn/edge/download?form=MA13FJ';
-	const maybeWarnOldBrowser = () => {
-		try {
-			const ua = navigator.userAgent || '';
-			// 取 Edg/、Chrome/、Chromium/ 的主版本号作为 Chromium 基线
-			const m = ua.match(/(?:Edg|Chrome|Chromium)\/(\d+)/);
-			if (!m) return;
-			const major = Number(m[1]);
-			if (!Number.isFinite(major)) return;
-			if (major < 89) {
-				const msg = `你的浏览器版本（Chromium ${major}）过老，点击下载最新版 Microsoft Edge`;
-				try { window.showBanner && window.showBanner(msg, 'red', 0, { showClose: true, slowFade: true }); } catch (_) {}
-				const el = document.getElementById('topBannerText');
-				if (el) {
-					el.style.textDecoration = 'underline';
-					el.style.cursor = 'pointer';
-					el.style.pointerEvents = 'auto';
-					el.setAttribute('role', 'link');
-					el.setAttribute('tabindex', '0');
-					el.addEventListener('click', () => { try { window.open(EDGE_DOWNLOAD_URL, '_blank', 'noopener'); } catch (_) {} });
-					el.addEventListener('keydown', (e) => {
-						if (e && (e.key === 'Enter' || e.key === ' ')) {
-							e.preventDefault();
-							try { window.open(EDGE_DOWNLOAD_URL, '_blank', 'noopener'); } catch (_) {}
-						}
-					});
-				}
-			}
-		} catch (_) {}
-	};
-	// 启动后检查一次
-	maybeWarnOldBrowser();
 
 	// 放开最小/最大输入：允许任意字符，解析时再校验
 })();

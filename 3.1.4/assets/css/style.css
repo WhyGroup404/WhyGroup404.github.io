@@ -508,29 +508,8 @@ input.weui-input[type="number"] { -moz-appearance: textfield; }
 	overflow: hidden;
 }
 .sheet__header { position: sticky; top: 0; z-index: 2; font-weight: 700; padding: 14px 16px; background: var(--card); border-bottom: 1px solid rgba(0,0,0,0.06); }
-/* 统一所有分页面关闭按钮为“主设置页”风格，并加入红色交互反馈 */
-.sheet__close {
-    position: absolute;
-    right: 10px;
-    top: 8px;
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    border: none;
-    background: transparent;
-    color: var(--text);
-    font-size: 24px;
-    line-height: 1;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    transition: background-color .15s ease, color .15s ease, opacity .15s ease;
-}
-.sheet__close:hover,
-.sheet__close:active { background: #ef4444; color: #fff; }
-.theme-dark .sheet__close:hover,
-.theme-dark .sheet__close:active { background: #dc2626; color: #fff; }
+.sheet__close { position: absolute; right: 10px; top: 8px; width: 28px; height: 28px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.06); background: var(--card); color: var(--text); font-size: 18px; line-height: 26px; cursor: pointer; }
+.theme-dark .sheet__close { border-color: rgba(255,255,255,0.08); }
 .sheet__content { padding: 0 12px 12px; overflow: auto; }
 .sheet__footer { padding: 12px; display: grid; gap: 10px; grid-template-columns: 1fr 1fr; position: sticky; bottom: 0; background: var(--card); border-top: 1px solid rgba(0,0,0,0.06); }
 .sheet__footer .weui-btn {
