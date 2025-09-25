@@ -36,6 +36,7 @@
 	const textareaRoster = document.getElementById('textareaRoster');
 	const btnToggleTheme = document.getElementById('btnToggleTheme');
 	const btnAuto5s = document.getElementById('btnAuto5s');
+    const btnOpenOSS = document.getElementById('btnOpenOSS');
 	// 简化：新功能弹窗与顶部横幅移至独立模块
 	// 新增设置控件
 	const switchShowRangeBar = document.getElementById('switchShowRangeBar');
@@ -1040,22 +1041,26 @@ let balancedBoostMax = 2.0; // [1,3]
                 probMap = (res && res.probMap) || {};
             }
         } catch (_) { probMap = {}; }
-        // 将概率映射为百分比并校正总和=100（四舍五入+误差修正）
+        // 以 0.1% 精度的“最大余数法”分配：总和严格=100.0%，视觉上更均匀
         const entries = ids.map(id => ({ id, p: Math.max(0, Number(probMap[id] || 0)) }));
         const sum = entries.reduce((s, x) => s + x.p, 0);
-        let percents = entries.map(x => (sum > 0 ? x.p / sum * 100 : 100 / ids.length));
-        let rounded = percents.map(v => Math.round(v));
-        // 误差校正
-        let diff = 100 - rounded.reduce((s, x) => s + x, 0);
-        if (diff !== 0) {
-            // 依据小数部分进行加减分配
-            const frac = percents.map((v, i) => ({ i, frac: v - Math.floor(v) }));
-            if (diff > 0) {
-                frac.sort((a,b) => b.frac - a.frac);
-                for (let k = 0; k < diff && k < frac.length; k++) rounded[frac[k].i] += 1;
-            } else {
-                frac.sort((a,b) => a.frac - b.frac);
-                for (let k = 0; k < -diff && k < frac.length; k++) { if (rounded[frac[k].i] > 0) rounded[frac[k].i] -= 1; }
+        let percents = entries.map(x => (sum > 0 ? (x.p / sum) * 100 : 100 / ids.length));
+        const rawTenths = percents.map(v => v * 10);
+        const tenths = rawTenths.map(v => Math.floor(v));
+        let base = tenths.reduce((s, x) => s + x, 0);
+        let remain = 1000 - base;
+        if (remain > 0) {
+            const order = rawTenths.map((v, i) => ({ i, frac: v - Math.floor(v) })).sort((a,b)=>b.frac-a.frac);
+            for (let k = 0; k < remain; k++) {
+                const pick = order[Math.min(order.length-1, Math.floor((k + 0.5) * order.length / remain))];
+                tenths[pick.i] += 1;
+            }
+        } else if (remain < 0) {
+            const need = -remain;
+            const order = rawTenths.map((v, i) => ({ i, frac: v - Math.floor(v) })).sort((a,b)=>a.frac-b.frac);
+            for (let k = 0; k < need; k++) {
+                const pick = order[Math.min(order.length-1, Math.floor((k + 0.5) * order.length / need))];
+                if (tenths[pick.i] > 0) tenths[pick.i] -= 1;
             }
         }
         // 渲染
@@ -1063,7 +1068,8 @@ let balancedBoostMax = 2.0; // [1,3]
             const row = document.createElement('div');
             row.className = 'weui-cell';
             const name = rosterMap.get(id) || '';
-            row.innerHTML = `<div class=\"weui-cell__bd\">学号 ${id}${name ? ' · '+name : ''}</div><div class=\"weui-cell__ft\">${rounded[idx]}%</div>`;
+            const percentText = (tenths[idx] / 10).toFixed(1) + '%';
+            row.innerHTML = `<div class=\"weui-cell__bd\">学号 ${id}${name ? ' · '+name : ''}</div><div class=\"weui-cell__ft\">${percentText}</div>`;
             overviewList.appendChild(row);
         });
     };
@@ -1350,9 +1356,16 @@ let balancedBoostMax = 2.0; // [1,3]
 		// 保持容器高度一致（不释放高度）
 		refreshAndLockDisplayBoxHeight();
         // 显示结果操作栏，缓缓出现
+        // 仅在开启智慧统计时显示操作按钮
         if (resultActions) {
-            resultActions.classList.remove('hidden');
-            requestAnimationFrame(() => resultActions.classList.add('is-show'));
+            const shouldShow = !!smartStatsEnabled;
+            if (shouldShow) {
+                resultActions.classList.remove('hidden');
+                requestAnimationFrame(() => resultActions.classList.add('is-show'));
+            } else {
+                resultActions.classList.remove('is-show');
+                resultActions.classList.add('hidden');
+            }
         }
 	};
 
@@ -1550,9 +1563,11 @@ const resetAll = () => {
 	};
 
 	const setFooterInfo = () => {
-		const browserInfoEl = document.getElementById('browserInfo');
-		const versionEl = document.getElementById('appVersion');
-		const copyrightEl = document.getElementById('copyright');
+        const browserInfoEl = document.getElementById('browserInfo');
+        const versionEl = document.getElementById('appVersion');
+        const copyrightEl = document.getElementById('copyright');
+        const settingsBrowserInfo = document.getElementById('settingsBrowserInfo');
+        const settingsVersion = document.getElementById('settingsVersion');
 
 		const ua = navigator.userAgent;
 		let kernel = '';
@@ -1567,10 +1582,11 @@ const resetAll = () => {
 		else if (/Android ([\d.]+)/.test(ua)) os = `Android ${RegExp.$1}`;
 		else if (/(iPhone|iPad); CPU .* OS ([\d_]+)/.test(ua)) os = `iOS ${RegExp.$2.replace(/_/g,'.')}`;
 
-		if (browserInfoEl) browserInfoEl.textContent = `${kernel || 'Unknown'} · ${os || 'Unknown OS'}`;
-		if (versionEl) {
-			versionEl.textContent = 'v3.1.5';
-		}
+        const bi = `${kernel || 'Unknown'} · ${os || 'Unknown OS'}`;
+        if (browserInfoEl) browserInfoEl.textContent = bi;
+        if (settingsBrowserInfo) settingsBrowserInfo.textContent = bi;
+        if (versionEl) versionEl.textContent = 'v3.1.6';
+        if (settingsVersion) settingsVersion.textContent = 'v3.1.6';
 		if (copyrightEl) {
 			const year = new Date().getFullYear();
 			copyrightEl.textContent = `© ${year}`;
@@ -1719,6 +1735,13 @@ const resetAll = () => {
     closeTheme();
   });
 
+  // 开源软件页面：新菜单项
+  btnOpenOSS?.addEventListener('click', () => {
+    try { window.open('oss.html', '_blank', 'noopener'); } catch (_) {
+      location.href = 'oss.html';
+    }
+  });
+
   // 概率总览：事件绑定
   btnOpenOverview?.addEventListener('click', openOverview);
   btnOverviewClose?.addEventListener('click', closeOverview);
@@ -1746,7 +1769,12 @@ const resetAll = () => {
     btnOpenSmartStats?.addEventListener('click', openSmartStats);
     btnSmartStatsClose?.addEventListener('click', closeSmartStats);
     btnSmartStatsOk?.addEventListener('click', closeSmartStats);
-    switchSmartStats?.addEventListener('change', () => { smartStatsEnabled = !!switchSmartStats.checked; saveState(); });
+    switchSmartStats?.addEventListener('change', () => { 
+        smartStatsEnabled = !!switchSmartStats.checked; 
+        saveState(); 
+        // 同步一次操作栏可见性
+        if (!smartStatsEnabled && resultActions) { resultActions.classList.remove('is-show'); resultActions.classList.add('hidden'); }
+    });
     switchSmartStatsDecay?.addEventListener('change', () => { smartStatsDecayEnabled = !!switchSmartStatsDecay.checked; saveState(); });
     inputSmartWrongAlpha?.addEventListener('input', () => {
         const a = Math.max(2, Math.min(5, Number(inputSmartWrongAlpha.value) || 2));

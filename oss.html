@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+    <title>开源软件与许可 | 学号随机点名</title>
+    <link rel="stylesheet" href="weui-master/dist/style/weui.min.css">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <style>
+        .oss-page { max-width: 900px; margin: 0 auto; padding: 16px; }
+        .oss-header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom: 12px; }
+        .oss-title { margin: 0; font-size: 20px; font-weight: 800; }
+        .oss-sect { background: var(--card); border: 1px solid color-mix(in srgb, var(--brand) 20%, transparent); border-radius: 12px; box-shadow: var(--shadow); }
+        .oss-link { color: var(--brand); text-decoration: none; }
+        .oss-link:hover { text-decoration: underline; }
+        .oss-meta { color: var(--muted); font-size: 12px; }
+        .oss-footer { margin-top: 14px; text-align: center; color: var(--muted); }
+        @media (min-width: 1024px) { .oss-page { max-width: 1200px; } }
+    </style>
+</head>
+<body data-weui-theme="light">
+    <div class="oss-page">
+        <div class="oss-header">
+            <h1 class="oss-title">开源软件与许可</h1>
+            <a href="index.html" class="weui-btn weui-btn_default">返回应用</a>
+        </div>
+
+        <div class="weui-cells__title">第三方库</div>
+        <div class="weui-cells oss-sect">
+            <div class="weui-cell">
+                <div class="weui-cell__bd">
+                    WeUI 样式库<br>
+                    <span class="oss-meta">Copyright © Tencent. Licensed under the MIT License.</span>
+                </div>
+                <div class="weui-cell__ft"><a class="oss-link" href="https://github.com/Tencent/weui" target="_blank" rel="noopener">GitHub</a></div>
+            </div>
+            <div class="weui-cell">
+                <div class="weui-cell__bd">
+                    今日诗词 API（用于随机诗句）<br>
+                    <span class="oss-meta">服务由第三方提供，使用遵循其条款。</span>
+                </div>
+                <div class="weui-cell__ft"><a class="oss-link" href="https://www.jinrishici.com/" target="_blank" rel="noopener">官网</a></div>
+            </div>
+            <div class="weui-cell">
+                <div class="weui-cell__bd">
+                    一言 Hitokoto API（备用随机句子）<br>
+                    <span class="oss-meta">服务由第三方提供，使用遵循其条款。</span>
+                </div>
+                <div class="weui-cell__ft"><a class="oss-link" href="https://hitokoto.cn/" target="_blank" rel="noopener">官网</a></div>
+            </div>
+        </div>
+
+        <div class="weui-cells__title">版权与声明</div>
+        <div class="weui-cells oss-sect">
+            <div class="weui-cell">
+                <div class="weui-cell__bd">
+                    本应用用于教学与课堂辅助；页面部分内容基于 AI 技术生成。全部第三方库、图标与服务均遵循各自的开源许可或使用条款，仅作集成与调用，不主张其权利。
+                </div>
+            </div>
+            <div class="weui-cell">
+                <div class="weui-cell__bd">
+                    如有版权或许可问题，请联系维护者以便及时处理与致谢。
+                </div>
+            </div>
+        </div>
+
+        <div class="oss-footer">台州王浩哥集团有限公司 © <span id="ossYear">2025</span></div>
+    </div>
+    <script>
+        try { document.getElementById('ossYear').textContent = String(new Date().getFullYear()); } catch (_) {}
+        // 继承主题色（若有保存）
+        try {
+            var saved = localStorage.getItem('rollcall:themeColor');
+            if (saved) { document.documentElement.style.setProperty('--brand', saved); }
+        } catch (_) {}
+    </script>
+</body>
+</html>
+
+

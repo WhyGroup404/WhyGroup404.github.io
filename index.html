@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
-    <title>在线学号点名3.1.5</title>
+    <title>在线学号点名3.1.6</title>
     <link rel="stylesheet" href="weui-master/dist/style/weui.min.css">
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="assets/css/display.css">
@@ -34,6 +34,7 @@
     <script defer src="assets/js/confetti.js"></script>
     <script defer src="assets/js/probability.js"></script>
     <script defer src="assets/js/app.js"></script>
+    <script defer src="assets/js/poem.js"></script>
     <script>
         // 简单防抖，避免 iOS PWA 双击放大
         document.addEventListener('gesturestart', function (e) { e.preventDefault(); });
@@ -120,7 +121,7 @@
             
         </main>
 
-        <div class="app__share-tip" style="text-align:center;color:var(--brand-ink);margin:8px 0 16px;">🎉好用的话可以推荐给其他老师！🎉</div>
+        
 
         <footer class="app__footer">
             <div class="app__actions">
@@ -131,14 +132,11 @@
                     <select id="profileSelect" class="weui-select footer-select"></select>
                 </div>
             </div>
-            <div class="app__meta">
-                <span>此页面部分内容基于AI技术生成。</span>
-                <span class="dot">·</span>
-                <span>浏览器：<span id="browserInfo">-</span></span>
-                <span class="dot">·</span>
-                <span>版本：v3.1.5</span>
-                <span class="dot">·</span>
-                <span>台州王浩哥集团有限公司 © 2025</span>
+            <div class="app__meta" style="width:100%">
+                <div id="poemBar" class="app__share-tip" style="text-align:center;color:var(--brand-ink);margin:8px 0 8px;" aria-live="polite">
+                    <span id="poemText">诗句加载中…</span>
+                    <span id="poemMeta" style="margin-left:6px;color:var(--muted);"></span>
+                </div>
             </div>
         </footer>
     </div>
@@ -311,6 +309,29 @@
                         </button>
                     </div>
                 </div>
+                <div class="weui-cells__title"><span class="title-with-icon"><img class="icon" src="assets/img/menu/GitHub.png" alt="" aria-hidden="true">开源与声明</span></div>
+                <div class="weui-cell">
+                    <div class="weui-cell__bd" data-search="开源 软件 许可 license 版权 声明">开源软件</div>
+                    <div class="weui-cell__ft">
+                        <button id="btnOpenOSS" class="weui-btn weui-btn_mini weui-btn_default btn-icon" title="打开">
+                            <img class="open-icon open-icon--light" src="assets/img/open/Open_Black.png" alt="" aria-hidden="true">
+                            <img class="open-icon open-icon--dark" src="assets/img/open/Open_White.png" alt="" aria-hidden="true">
+                            打开
+                        </button>
+                    </div>
+                </div>
+                <div class="weui-cells__title">关于</div>
+                <div class="weui-cell">
+                    <div class="weui-cell__bd" style="color:var(--muted);">此页面部分内容基于AI技术生成。</div>
+                </div>
+                <div class="weui-cell">
+                    <div class="weui-cell__bd">浏览器</div>
+                    <div class="weui-cell__ft"><span id="settingsBrowserInfo">-</span></div>
+                </div>
+                <div class="weui-cell">
+                    <div class="weui-cell__bd">版本</div>
+                    <div class="weui-cell__ft"><span id="settingsVersion">v3.1.6</span></div>
+                </div>
             </div>
             <div class="sheet__footer">
                 <button id="btnSettingsCancel" class="weui-btn weui-btn_default">取消</button>
@@ -338,14 +359,14 @@
         <div class="sheet">
             <div class="sheet__header">新改进<button id="btnWhatsNewClose" class="sheet__close" aria-label="关闭">×</button></div>
             <div class="sheet__content">
-                <div class="weui-cells__title">当前版本：v3.1.5  -  ⭐2025/9/24</div>
+                <div class="weui-cells__title">当前版本：v3.1.6  -  ⭐2025/9/25</div>
                 <div class="weui-cells">
-                    <div class="weui-cell">新增“概率总览报表”：按当前配置实时计算</div>
-                    <div class="weui-cell">智慧统计优化：概率更真实可控</div>
-                    <div class="weui-cell">概率权重限制：同一范围总和最多 100%，超额弹红色横幅</div>
-                    <div class="weui-cell">兼容性提升，浏览器版本过低时会弹出提示</div>
-                      <div class="weui-cell">页面UI小动</div>
-                    <div class="weui-cell">细节优化与稳定性提升</div>
+                    <div class="weui-cell">版本号升级：v3.1.6</div>
+                    <div class="weui-cell">AI声明、浏览器信息等迁移到设置</div>
+                    <div class="weui-cell">新增诗句到页脚，</div>
+                    <div class="weui-cell">改进概率总览采用0.1%精度最大余数法，总和=100.0%</div>
+                    <div class="weui-cell">优化页脚高度自适应与底部空间预留，增加毛玻璃效果</div>
+                    <div class="weui-cell">未开启“智慧统计”时将不显示“答对/答错/跳过”按钮</div>
 
                 </div>
             </div>
@@ -454,6 +475,7 @@
                         <button id="btnOpenSmartStats" class="weui-btn weui-btn_mini weui-btn_default" title="打开">打开</button>
                     </div>
                 </div>
+                
                 <div class="weui-cells__title">使用说明</div>
                 <div class="weui-cells">
                     <div class="weui-cell">

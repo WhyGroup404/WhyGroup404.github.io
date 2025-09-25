@@ -24,6 +24,8 @@
     --text: #111418;
     --muted: #667085;
     --shadow: 0 10px 25px rgba(0,0,0,0.08), 0 4px 6px rgba(0,0,0,0.05);
+    /* 固定页脚的预留高度（含安全区），避免需要滚动才能看到） */
+    --footer-height: 120px;
 
 }
 
@@ -213,6 +215,8 @@ select.weui-select { all: revert; }
 .app__main {
 	flex: 1; /* 主体占满，底部信息置底 */
 	padding: 16px;
+	/* 为固定页脚预留空间，避免遮挡诗句或按钮 */
+	padding-bottom: calc(16px + var(--footer-height));
 	max-width: 700px;
 	width: 100%;
 	margin-left: auto;
@@ -439,12 +443,19 @@ input.weui-input[type="number"] { -moz-appearance: textfield; }
 }
 
 .app__footer { 
-	padding: 8px 12px; 
-	display: grid;
-	grid-template-columns: auto 1fr; 
-	align-items: center; 
-	gap: 12px;
-	color: var(--muted);
+    padding: 6px 10px; 
+    display: grid;
+    grid-template-columns: auto 1fr; 
+    align-items: center; 
+    gap: 12px;
+    color: var(--muted);
+    position: sticky;
+    bottom: 0;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--card) 86%, transparent), color-mix(in srgb, var(--card) 60%, transparent));
+    backdrop-filter: saturate(160%) blur(10px);
+    -webkit-backdrop-filter: saturate(160%) blur(10px);
+    box-shadow: 0 -1px 0 rgba(0,0,0,0.06);
+    z-index: 10;
 }
 
 .app__actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
@@ -474,6 +485,10 @@ input.weui-input[type="number"] { -moz-appearance: textfield; }
 .theme-dark .app__header {
     background: linear-gradient(180deg, color-mix(in srgb, var(--brand) 4%, rgba(16,24,20,0.96)), color-mix(in srgb, var(--brand) 2%, rgba(16,24,20,0.66)));
     box-shadow: 0 1px 0 rgba(255,255,255,0.04);
+}
+.theme-dark .app__footer {
+    background: linear-gradient(180deg, color-mix(in srgb, var(--brand) 6%, rgba(16,24,20,0.90)), color-mix(in srgb, var(--brand) 4%, rgba(16,24,20,0.70)));
+    box-shadow: 0 -1px 0 rgba(255,255,255,0.04);
 }
 .theme-dark .card--panel { border-color: color-mix(in srgb, var(--brand) 22%, transparent); }
 .theme-dark .range-item {
@@ -582,11 +597,33 @@ input.weui-input[type="number"] { -moz-appearance: textfield; }
 @keyframes pop { 0% { transform: scale(0.96); opacity: .6; } 60% { transform: scale(1.06); opacity: 1; } 100% { transform: scale(1); } }
 .pop { animation: pop .36s cubic-bezier(.2,.9,.2,1); }
 
+/* 随机诗句加载与切换动效 */
+#poemBar { user-select: none; }
+#poemBar #poemText,
+#poemBar #poemMeta { transition: opacity .28s ease, transform .28s ease; }
+.poem-loading #poemText { animation: poemLoading 1.6s ease-in-out infinite; opacity: .85; }
+@keyframes poemLoading { 0% { opacity: .45; } 50% { opacity: 1; } 100% { opacity: .45; } }
+.poem-enter { animation: poemEnter .42s ease both; }
+@keyframes poemEnter { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+/* 随机诗句字体（楷体/仿宋，跨平台回退） */
+#poemText {
+	font-family: KaiTi, STKaiti, "Kaiti SC", "DFKai-SB", "AR PL KaitiM GB", "Kaiti TC", "Source Han Serif SC", "Noto Serif CJK SC", "Noto Serif SC", serif;
+	font-size: clamp(18px, 2vw, 24px);
+	line-height: 1.8;
+}
+#poemMeta {
+	font-family: FangSong, FangSong_GB2312, STFangsong, "FZFangSong-Z02S", SimSun, "Source Han Serif SC", "Noto Serif CJK SC", "Noto Serif SC", serif;
+	font-size: clamp(14px, 1.6vw, 18px);
+	line-height: 1.6;
+}
+
 /* 遵循系统“减少动效”偏好 */
 @media (prefers-reduced-motion: reduce) {
 	.rolling .display__number { animation: none !important; }
 	.pop { animation: none !important; }
 	.weui-mask .sheet { transition: none !important; }
+	.poem-loading #poemText { animation: none !important; }
 }
 
 
@@ -599,6 +636,14 @@ input.weui-input[type="number"] { -moz-appearance: textfield; }
 		padding-left: 14px;
 		padding-right: 14px;
 	}
+	/* 移动端：页脚不悬浮，避免遮挡底部按钮；同时考虑底部安全区 */
+	.app__footer { position: static; padding-bottom: calc(6px + env(safe-area-inset-bottom, 0px)); backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: none; }
+	/* 移动端：主体不再为页脚预留额外空间 */
+	.app__main { padding-bottom: 12px; }
+	/* 小屏：随机诗句与出处分行显示 */
+	#poemBar { display: grid; grid-template-columns: 1fr; justify-items: center; row-gap: 2px; }
+	#poemBar #poemText, #poemBar #poemMeta { display: block; }
+	#poemBar #poemMeta { margin-left: 0 !important; }
 	.range-cells { grid-template-columns: 1fr !important; }
 	/* 确保 WeUI 容器左右无额外外边距，避免视觉右偏 */
 	.weui-cells { margin-left: 0 !important; margin-right: 0 !important; }
