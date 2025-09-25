@@ -1,0 +1,57 @@
+:root {
+	--bg: #0c1210;
+	--ink: #d6f5e6;
+	--sub: #89c9ad;
+	--accent: #12b76a;
+	--error: #ff6b6b;
+	--mono: 'Share Tech Mono', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    --tap: 10px;
+}
+
+html, body { height: 100%; }
+body {
+	margin: 0;
+	background: var(--bg);
+	color: var(--ink);
+	font-family: var(--mono);
+	font-size: 14px;
+	line-height: 1.6;
+}
+.title-bar { height: 36px; display: flex; align-items: center; padding: 0 12px; background: #0a1713; border-bottom: 1px solid rgba(255,255,255,0.08); color: var(--sub); font-weight: 600; letter-spacing: .5px; }
+.status-bar { display:flex; align-items:center; gap:12px; padding: 8px 12px; background: #0e1915; border-bottom: 1px solid rgba(255,255,255,0.08); color: var(--sub); font-family: var(--mono); font-size: 12px; overflow:auto; }
+.status-bar .badge { background: rgba(18,183,106,.12); color: var(--accent); border: 1px solid rgba(18,183,106,.45); padding: 2px 6px; border-radius: 6px; white-space: nowrap; }
+.terminal { display: flex; flex-direction: column; height: calc(100% - 36px - 38px); padding: 12px; box-sizing: border-box; }
+.screen { flex: 1; overflow: auto; white-space: pre-wrap; word-break: break-word; }
+.input-row { display: flex; align-items: center; gap: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.08); }
+.prompt { color: var(--accent); }
+.cmdline {
+	flex: 1;
+	background: transparent;
+	border: none;
+	outline: none;
+	color: var(--ink);
+	font-family: var(--mono);
+	font-size: 14px;
+    padding: 6px 8px;
+}
+.line { margin: 2px 0; }
+.line .ts { color: var(--sub); opacity: .7; margin-right: 8px; }
+.line .err { color: var(--error); }
+.line .ok { color: var(--accent); }
+.line .accent { color: var(--accent); }
+.line .muted { color: var(--sub); opacity: .8; }
+.hidden { display: none; }
+
+.screen::-webkit-scrollbar { width: 10px; height: 10px; }
+.screen::-webkit-scrollbar-thumb { background: rgba(255,255,255,.12); border-radius: 8px; }
+.screen::-webkit-scrollbar-track { background: transparent; }
+
+@media (max-width: 480px) {
+	body { font-size: 13px; }
+    .title-bar { height: 32px; font-size: 12px; }
+    .terminal { padding: 8px; height: calc(100% - 32px - 38px); }
+    .cmdline { font-size: 13px; padding: 10px 12px; }
+    .input-row { padding-top: 6px; }
+}
+
+

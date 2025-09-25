@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+    <title>在线学号点名3.1.5</title>
+    <link rel="stylesheet" href="weui-master/dist/style/weui.min.css">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/display.css">
+    <script>
+        // 预先应用保存的主题色，避免刷新时出现默认绿色闪烁
+        (function(){
+            try {
+                var saved = localStorage.getItem('rollcall:themeColor');
+                if (saved) {
+                    document.documentElement.style.setProperty('--brand', saved);
+                    var meta = document.getElementById('metaThemeColor');
+                    if (meta) meta.setAttribute('content', saved);
+                }
+            } catch (_) {}
+        })();
+    </script>
+    
+    <style>
+        /* 轻量兜底，主样式在 assets/css/style.css */
+        .hidden { display: none; }
+    </style>
+    <script defer src="assets/js/utils.js"></script>
+    <script defer src="assets/js/roster.js"></script>
+    <script defer src="assets/js/banner.js"></script>
+    <script defer src="assets/js/whatsnew.js"></script>
+    
+    <script defer src="assets/js/confetti.js"></script>
+    <script defer src="assets/js/probability.js"></script>
+    <script defer src="assets/js/app.js"></script>
+    <script>
+        // 简单防抖，避免 iOS PWA 双击放大
+        document.addEventListener('gesturestart', function (e) { e.preventDefault(); });
+    </script>
+    <meta name="theme-color" content="#12b76a" id="metaThemeColor">
+</head>
+<body data-weui-theme="light">
+    <div class="app">
+        <header class="app__header">
+            <div class="app__brand">
+                <span class="brand__logo">🎯</span>
+                <div class="brand__text">
+                    <h1 class="brand__title">学号随机点名</h1>
+                    <div class="brand__subtitle">Random roll call</div>
+                </div>
+            </div>
+            <button id="btnOpenSettings" class="app__settings-btn settings-btn" aria-label="打开设置">
+                <svg class="settings-btn__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <g fill="currentColor" fill-rule="evenodd" clip-rule="evenodd">
+                        <path d="M12 8.25a3.75 3.75 0 1 0 0 7.5a3.75 3.75 0 0 0 0-7.5M9.75 12a2.25 2.25 0 1 1 4.5 0a2.25 2.25 0 0 1-4.5 0"/>
+                        <path d="M11.975 1.25c-.445 0-.816 0-1.12.02a2.8 2.8 0 0 0-.907.19a2.75 2.75 0 0 0-1.489 1.488c-.145.35-.184.72-.2 1.122a.87.87 0 0 1-.415.731a.87.87 0 0 1-.841-.005c-.356-.188-.696-.339-1.072-.389a2.75 2.75 0 0 0-2.033.545a2.8 2.8 0 0 0-.617.691c-.17.254-.356.575-.578.96l-.025.044c-.223.385-.408.706-.542.98c-.14.286-.25.568-.29.88a2.75 2.75 0 0 0 .544 2.033c.231.301.532.52.872.734a.87.87 0 0 1 .426.726a.87.87 0 0 1-.426.726c-.34.214-.64.433-.872.734a2.75 2.75 0 0 0-.545 2.033c.041.312.15.594.29.88c.135.274.32.595.543.98l.025.044c.222.385.408.706.578.96c.177.263.367.5.617.69a2.75 2.75 0 0 0 2.033.546c.376-.05.716-.2 1.072-.389a.87.87 0 0 1 .84-.005a.86.86 0 0 1 .417.731c.015.402.054.772.2 1.122a2.75 2.75 0 0 0 1.488 1.489c.29.12.59.167.907.188c.304.021.675.021 1.12.021h.05c.445 0 .816 0 1.12-.02c.318-.022.617-.069.907-.19a2.75 2.75 0 0 0 1.489-1.488c.145-.35.184-.72.2-1.122a.87.87 0 0 1 .415-.732a.87.87 0 0 1 .841.006c.356.188.696.339 1.072.388a2.75 2.75 0 0 0 2.033-.544c.25-.192.44-.428.617-.691c.17-.254.356-.575.578-.96l.025-.044c.223-.385.408-.706.542-.98c.14-.286.25-.569.29-.88a2.75 2.75 0 0 0-.544-2.033c-.231-.301-.532-.52-.872-.734a.87.87 0 0 1-.426-.726c0-.278.152-.554.426-.726c.34-.214.64-.433.872-.734a2.75 2.75 0 0 0 .545-2.033a2.8 2.8 0 0 0-.29-.88a18 18 0 0 0-.543-.98l-.025-.044a18 18 0 0 0-.578-.96a2.8 2.8 0 0 0-.617-.69a2.75 2.75 0 0 0-2.033-.546c-.376.05-.716.2-1.072.389a.87.87 0 0 1-.84.005a.87.87 0 0 1-.417-.731c-.015-.402-.054-.772-.2-1.122a2.75 2.75 0 0 0-1.488-1.489c-.29-.12-.59-.167-.907-.188c-.304-.021-.675-.021-1.12-.021zm-1.453 1.595c.077-.032.194-.061.435-.078c.247-.017.567-.017 1.043-.017s.796 0 1.043.017c.241.017.358.046.435.078c.307.127.55.37.677.677c.04.096.073.247.086.604c.03.792.439 1.555 1.165 1.974s1.591.392 2.292.022c.316-.167.463-.214.567-.227a1.25 1.25 0 0 1 .924.247c.066.051.15.138.285.338c.139.206.299.483.537.895s.397.69.506.912c.107.217.14.333.15.416a1.25 1.25 0 0 1-.247.924c-.064.083-.178.187-.48.377c-.672.422-1.128 1.158-1.128 1.996s.456 1.574 1.128 1.996c.302.19.416.294.48.377c.202.263.29.595.247.924c-.01.083-.044.2-.15.416c-.109.223-.268.5-.506.912s-.399.689-.537.895c-.135.2-.219.287-.285.338a1.25 1.25 0 0 1-.924.247c-.104-.013-.25-.06-.567-.227c-.7-.37-1.566-.398-2.292.021s-1.135 1.183-1.165 1.975c-.013.357-.046.508-.086.604a1.25 1.25 0 0 1-.677.677c-.077.032-.194.061-.435.078c-.247.017-.567.017-1.043.017s-.796 0-1.043-.017c-.241-.017-.358-.046-.435-.078a1.25 1.25 0 0 1-.677-.677c-.04-.096-.073-.247-.086-.604c-.03-.792-.439-1.555-1.165-1.974s-1.591-.392-2.292-.022c-.316.167-.463.214-.567.227a1.25 1.25 0 0 1-.924-.247c-.066-.051-.15-.138-.285-.338a17 17 0 0 1-.537-.895c-.238-.412-.397-.69-.506-.912c-.107-.217-.14-.333-.15-.416a1.25 1.25 0 0 1 .247-.924c.064-.083.178-.187.48-.377c.672-.422 1.128-1.158 1.128-1.996s-.456-1.574-1.128-1.996c-.302-.19-.416-.294-.48-.377a1.25 1.25 0 0 1-.247-.924c.01-.083.044-.2.15-.416c.109-.223.268-.5.506-.912s.399-.689.537-.895c.135-.2.219-.287.285-.338a1.25 1.25 0 0 1 .924-.247c.104.013.25.06.567.227c.7.37 1.566.398 2.292-.022c.726-.419 1.135-1.182 1.165-1.974c.013-.357.046-.508.086-.604c.127-.307.37-.55.677-.677"/>
+                    </g>
+                </svg>
+                <span class="settings-btn__text">设置</span>
+            </button>
+        </header>
+
+        <!-- 顶部横幅（可复用，默认隐藏） -->
+        <div id="topBanner" class="banner hidden" role="status" aria-live="polite">
+            <div class="banner__inner">
+                <span id="topBannerText" class="banner__text">这是一个测试横幅</span>
+                <button id="topBannerClose" class="banner__close" aria-label="关闭" title="关闭">×</button>
+            </div>
+        </div>
+
+        <main class="app__main">
+            <section class="card card--panel">
+                <div id="rangeBar" class="range-cells">
+                    <div class="weui-cells weui-cells_form">
+                        <div class="weui-cell weui-cell_active">
+                            <div class="weui-cell__hd"><label for="inputMin" class="weui-label">最小学号</label></div>
+                            <div class="weui-cell__bd"><input id="inputMin" type="text" inputmode="text" class="weui-input" placeholder="最小学号阈值（如 1）"></div>
+                        </div>
+                    </div>
+                    <div class="weui-cells weui-cells_form">
+                        <div class="weui-cell weui-cell_active">
+                            <div class="weui-cell__hd"><label for="inputMax" class="weui-label">最大学号</label></div>
+                            <div class="weui-cell__bd"><input id="inputMax" type="text" inputmode="text" class="weui-input" placeholder="最大学号阈值（如 50）"></div>
+                        </div>
+                    </div>
+                    <div class="weui-cells weui-cells_form">
+                        <div class="weui-cell weui-cell_active">
+                            <div class="weui-cell__hd"><label for="inputExclude" class="weui-label">排除学号</label></div>
+                            <div class="weui-cell__bd"><input id="inputExclude" type="text" inputmode="text" class="weui-input" placeholder="学号中间用英文逗号隔开"></div>
+                        </div>
+                    </div>
+                </div>
+
+                
+
+                <div class="display">
+                    <div id="displayLabel" class="display__label">当前学号</div>
+                    <div id="displayNumber" class="display__number is-placeholder">填写必要设置后开始！</div>
+                    <div id="displayName" class="display__name hidden">—</div>
+                    <div id="displayCountdown" class="display__countdown hidden">—</div>
+                </div>
+
+                <!-- 抽取结果操作栏：答对/答错/跳过（停止后缓缓显示） -->
+                <div id="resultActions" class="result-actions hidden" aria-label="结果操作">
+                    <button id="btnMarkCorrect" class="weui-btn weui-btn_mini weui-btn_primary">✔ 答对了</button>
+                    <button id="btnMarkWrong" class="weui-btn weui-btn_mini weui-btn_warn">❌ 答错了</button>
+                    <button id="btnMarkSkip" class="weui-btn weui-btn_mini weui-btn_default">→ 跳过</button>
+                </div>
+
+                <div class="controls controls--bottom">
+                    <div class="controls__primary">
+                        <button class="weui-btn weui-btn_primary btn-ripple js-ripple js-start">开始滚动</button>
+                        <button class="weui-btn weui-btn_warn btn-ripple js-ripple js-stop hidden">停止并点名</button>
+                    </div>
+                    <button id="btnAuto5s" class="weui-btn weui-btn_default btn-ripple js-ripple">5秒随机抽人</button>
+                </div>
+            </section>
+
+            
+        </main>
+
+        <div class="app__share-tip" style="text-align:center;color:var(--brand-ink);margin:8px 0 16px;">🎉好用的话可以推荐给其他老师！🎉</div>
+
+        <footer class="app__footer">
+            <div class="app__actions">
+                <button id="btnToggleTheme" class="weui-btn weui-btn_default weui-btn_mini btn-ripple js-ripple">切换主题</button>
+                <button id="btnWhatsNew" class="weui-btn weui-btn_default weui-btn_mini btn-ripple js-ripple">新功能</button>
+                <div class="footer__profile">
+                    <span class="profile__label">班级：</span>
+                    <select id="profileSelect" class="weui-select footer-select"></select>
+                </div>
+            </div>
+            <div class="app__meta">
+                <span>此页面部分内容基于AI技术生成。</span>
+                <span class="dot">·</span>
+                <span>浏览器：<span id="browserInfo">-</span></span>
+                <span class="dot">·</span>
+                <span>版本：v3.1.5</span>
+                <span class="dot">·</span>
+                <span>台州王浩哥集团有限公司 © 2025</span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- 设置弹窗 -->
+    <div id="settingsSheet" class="weui-mask hidden" role="dialog" aria-modal="true">
+        <div class="sheet">
+            <div class="sheet__header">
+                <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
+                    <span style="font-weight: 700; font-size: 18px;">设置</span>
+                    <div id="settingsSearchRow" style="flex: 1; max-width: calc(100% - 100px);">
+                        <div class="weui-search-bar" id="settingsSearchBar" style="background: none;">
+                            <style>
+                                #settingsSearchBar .weui-search-bar__box {
+                                    border-radius: 6px;
+                                    border: 1px solid rgba(0,0,0,0.1);
+                                }
+                                #settingsSearchBar .weui-search-bar__label {
+                                    border-radius: 6px;
+                                    border: 1px solid rgba(0,0,0,0.1);
+                                }
+                            </style>
+                            <form class="weui-search-bar__form">
+                                <div class="weui-search-bar__box">
+                                    <i class="weui-icon-search"></i>
+                                    <input id="settingsSearchInput" type="search" class="weui-search-bar__input" placeholder="搜索设置" required>
+                                    <a class="weui-icon-clear" id="settingsSearchClear"></a>
+                                </div>
+                                <label class="weui-search-bar__label" id="settingsSearchLabel">
+                                    <i class="weui-icon-search"></i>
+                                    <span>搜索设置</span>
+                                </label>
+                            </form>
+                            <a class="weui-search-bar__cancel-btn" id="settingsSearchCancel">取消</a>
+                        </div>
+                    </div>
+                    <button id="btnSettingsClose" class="sheet__close" aria-label="关闭">×</button>
+                </div>
+            </div>
+            <div class="sheet__content">
+                <div id="settingsSearchEmpty" class="weui-cell hidden"><div class="weui-cell__bd" style="color:var(--muted);">未找到相关设置</div></div>
+                <div class="weui-cells__title"><span class="title-with-icon"><img class="icon" src="assets/img/menu/Class.png" alt="" aria-hidden="true">班级配置</span></div>
+                <div class="weui-cell">
+                    <div class="weui-cell__bd" data-search="班级 资料 档案 配置 切换 profile">
+                        <select id="profileSelectSettings" class="weui-select"></select>
+                    </div>
+                    <div class="weui-cell__ft" style="white-space: nowrap;">
+                        <button id="btnProfileNew" class="weui-btn weui-btn_mini weui-btn_default" data-search="新建班级 添加 班级 新建 profile">新建</button>
+                        <button id="btnProfileRename" class="weui-btn weui-btn_mini weui-btn_default" style="margin-left:8px;" data-search="重命名 改名 班级 名称">重命名</button>
+                        <button id="btnProfileDelete" class="weui-btn weui-btn_mini weui-btn_warn" style="margin-left:8px;" data-search="删除 班级 移除 profile">删除</button>
+                    </div>
+                </div>
+                <div class="weui-cell">
+                    <div class="weui-cell__bd" data-search="导入 导出 备份 还原 profile 班级">导入/导出</div>
+                    <div class="weui-cell__ft" style="white-space: nowrap;">
+                        <button id="btnProfileExport" class="weui-btn weui-btn_mini weui-btn_default" data-search="导出 备份 班级">导出当前班级</button>
+                        <button id="btnProfileImport" class="weui-btn weui-btn_mini weui-btn_default" style="margin-left:8px;" data-search="导入 还原 班级">导入班级</button>
+                        <input id="inputImportProfile" type="file" accept="application/json" class="hidden">
+                    </div>
+                </div>
+                <div class="weui-cells__title"><span class="title-with-icon"><img class="icon" src="assets/img/menu/Regular.png" alt="" aria-hidden="true">常规设置</span></div>
+                <label class="weui-cell weui-cell_switch">
+                    <div class="weui-cell__bd" data-search="不重复 去重 抽过不再出现">不重复点到（抽过不再出现）</div>
+                    <div class="weui-cell__ft">
+                        <input id="switchNoRepeat" class="weui-switch" type="checkbox" checked>
+                    </div>
+                </label>
+                <div class="weui-cell">
+                    <div class="weui-cell__bd" data-search="已抽名单 历史 记录 清空">已抽名单</div>
+                    <div class="weui-cell__ft" style="white-space: nowrap;">
+                        <button id="btnClearPicked" class="weui-btn weui-btn_mini weui-btn_warn">清空已抽</button>
+                    </div>
+                </div>
+                <label class="weui-cell">
+                    <div class="weui-cell__bd" data-search="清空 时机 不重复 过期 持续时间">何时清空不重复名单？</div>
+                    <div class="weui-cell__ft">
+                        <select id="selectNoRepeatExpire" class="weui-select">
+                            <option value="session" selected>网页刷新后</option>
+                            <option value="40m">40分钟后</option>
+                            <option value="1d">一天后</option>
+                        </select>
+                    </div>
+                </label>
+                <label class="weui-cell weui-cell_switch">
+                    <div class="weui-cell__bd" data-search="滚动 动画 特效 开关">启用滚动动画（更有仪式感）</div>
+                    <div class="weui-cell__ft">
+                        <input id="switchAnimate" class="weui-switch" type="checkbox" checked>
+                    </div>
+                </label>
+
+                <label class="weui-cell weui-cell_switch">
+                    <div class="weui-cell__bd">显示顶部设置栏</div>
+                    <div class="weui-cell__ft">
+                        <input id="switchShowRangeBar" class="weui-switch" type="checkbox" checked>
+                    </div>
+                </label>
+
+                <div class="weui-cell">
+                    <div class="weui-cell__bd" data-search="自动 抽人 时长 倒计时 秒"> 
+                        <label for="inputAutoSeconds" class="weui-label">自动抽人时长</label>
+                        <input id="inputAutoSeconds" type="range" min="1" max="10" value="5" style="width:100%">
+                        <div style="margin-top:6px;color:var(--muted);">当前：<span id="autoSecondsPreview">5</span> 秒</div>
+                    </div>
+                </div>
+
+                <div class="weui-cells__title"><span class="title-with-icon"><img class="icon" src="assets/img/menu/List.png" alt="" aria-hidden="true">名单管理</span></div>
+                <div class="weui-cell">
+                    <div class="weui-cell__bd" data-search="名单 自定义 名单管理 录入 编辑 复制 粘贴">自定义名单</div>
+                    <div class="weui-cell__ft">
+                        <button id="btnOpenRoster" class="weui-btn weui-btn_mini weui-btn_default btn-icon" title="打开">
+                            <img class="open-icon open-icon--light" src="assets/img/open/Open_Black.png" alt="" aria-hidden="true">
+                            <img class="open-icon open-icon--dark" src="assets/img/open/Open_White.png" alt="" aria-hidden="true">
+                            打开
+                        </button>
+                    </div>
+                </div>
+
+                <div class="weui-cells__title"><span class="title-with-icon"><img class="icon" src="assets/img/menu/Color.png" alt="" aria-hidden="true">主题色设置</span></div>
+                <div class="weui-cell">
+                    <div class="weui-cell__bd" data-search="主题色 颜色 皮肤 主题 调色盘 预设 自定义 保存">设置全局主题色</div>
+                    <div class="weui-cell__ft">
+                        <button id="btnOpenTheme" class="weui-btn weui-btn_mini weui-btn_default btn-icon" title="打开">
+                            <img class="open-icon open-icon--light" src="assets/img/open/Open_Black.png" alt="" aria-hidden="true">
+                            <img class="open-icon open-icon--dark" src="assets/img/open/Open_White.png" alt="" aria-hidden="true">
+                            打开
+                        </button>
+                    </div>
+                </div>
+
+                <div class="weui-cells__title"><span class="title-with-icon"><img class="icon" src="assets/img/menu/PlusSettings.png" alt="" aria-hidden="true">高级抽取策略</span></div>
+                <div class="weui-cell">
+                    <div class="weui-cell__bd" data-search="均衡 智能 抽取 设置">智能抽取设置（均衡模式）</div>
+                    <div class="weui-cell__ft">
+                        <button id="btnOpenAdvanced" class="weui-btn weui-btn_mini weui-btn_default btn-icon" title="打开">
+                            <img class="open-icon open-icon--light" src="assets/img/open/Open_Black.png" alt="" aria-hidden="true">
+                            <img class="open-icon open-icon--dark" src="assets/img/open/Open_White.png" alt="" aria-hidden="true">
+                            打开
+                        </button>
+                    </div>
+                </div>
+                <label class="weui-cell weui-cell_switch">
+                    <div class="weui-cell__bd" data-search="概率 权重 百分比 机会 设置">启用概率权重(可以设置每个学号抽中的概率)</div>
+                    <div class="weui-cell__ft">
+                        <input id="switchEnableWeights" class="weui-switch" type="checkbox">
+                    </div>
+                </label>
+                <label class="weui-cell weui-cell_switch">
+                    <div class="weui-cell__bd" data-search="掩盖 植入 隐藏 概率 设置">掩盖概率设置（滚动时假装没设置概率？）</div>
+                    <div class="weui-cell__ft">
+                        <input id="switchWeightsMask" class="weui-switch" type="checkbox">
+                    </div>
+                </label>
+                <div class="weui-cell">
+                    <div class="weui-cell__bd" data-search="概率 权重 设置 编辑">概率权重设置（按范围配置百分比）</div>
+                    <div class="weui-cell__ft">
+                        <button id="btnOpenWeights" class="weui-btn weui-btn_mini weui-btn_default btn-icon" title="打开">
+                            <img class="open-icon open-icon--light" src="assets/img/open/Open_Black.png" alt="" aria-hidden="true">
+                            <img class="open-icon open-icon--dark" src="assets/img/open/Open_White.png" alt="" aria-hidden="true">
+                            打开
+                        </button>
+                    </div>
+                </div>
+                <div class="weui-cell">
+                    <div class="weui-cell__bd" data-search="总览 报表 概率 真实 100%">查看总览报表（当前范围真实概率分配）</div>
+                    <div class="weui-cell__ft" style="white-space: nowrap;">
+                        <button id="btnOpenOverview" class="weui-btn weui-btn_mini weui-btn_default btn-icon" title="打开">
+                            <img class="open-icon open-icon--light" src="assets/img/open/Open_Black.png" alt="" aria-hidden="true">
+                            <img class="open-icon open-icon--dark" src="assets/img/open/Open_White.png" alt="" aria-hidden="true">
+                            打开
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="sheet__footer">
+                <button id="btnSettingsCancel" class="weui-btn weui-btn_default">取消</button>
+                <button id="btnSettingsSave" class="weui-btn weui-btn_primary">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 概率总览报表弹窗 -->
+    <div id="overviewSheet" class="weui-mask hidden" role="dialog" aria-modal="true">
+        <div class="sheet">
+            <div class="sheet__header">概率总览报表<button id="btnOverviewClose" class="sheet__close" aria-label="关闭">×</button></div>
+            <div class="sheet__content">
+                <div class="weui-cells__title">当前范围内每个学号的实时抽中概率（总和=100%）</div>
+                <div class="weui-cells" id="overviewList"></div>
+            </div>
+            <div class="sheet__footer">
+                <button id="btnOverviewOk" class="weui-btn weui-btn_primary">知道了</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 新功能弹窗 -->
+    <div id="whatsNewSheet" class="weui-mask hidden" role="dialog" aria-modal="true" style="z-index: 999999999;">
+        <div class="sheet">
+            <div class="sheet__header">新改进<button id="btnWhatsNewClose" class="sheet__close" aria-label="关闭">×</button></div>
+            <div class="sheet__content">
+                <div class="weui-cells__title">当前版本：v3.1.5  -  ⭐2025/9/24</div>
+                <div class="weui-cells">
+                    <div class="weui-cell">新增“概率总览报表”：按当前配置实时计算</div>
+                    <div class="weui-cell">智慧统计优化：概率更真实可控</div>
+                    <div class="weui-cell">概率权重限制：同一范围总和最多 100%，超额弹红色横幅</div>
+                    <div class="weui-cell">兼容性提升，浏览器版本过低时会弹出提示</div>
+                      <div class="weui-cell">页面UI小动</div>
+                    <div class="weui-cell">细节优化与稳定性提升</div>
+
+                </div>
+            </div>
+            <div class="sheet__footer">
+                <button id="btnWhatsNewOk" class="weui-btn weui-btn_primary">知道了</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 概率权重设置弹窗 -->
+    <div id="weightsSheet" class="weui-mask hidden" role="dialog" aria-modal="true">
+        <div class="sheet">
+            <div class="sheet__header">概率权重设置（按学号）<button id="btnWeightsClose" class="sheet__close" aria-label="关闭">×</button></div>
+            <div class="sheet__content">
+                <div class="weui-cells__title">为单个学号设置抽中百分比（未设置者平均分配剩余百分比）。</div>
+                <div class="weui-cells__tips" style="margin:6px 0;color:var(--muted);">提示：当前范围与排除条件内的学号，已设置的百分比合计建议不超过 100%；超过时，将仅在已设置学号间按占比抽取。</div>
+
+                <label class="weui-cell weui-cell_switch">
+                    <div class="weui-cell__bd">设置了概率的学号排除“不重复点到”设置(可以再次抽到)</div>
+                    <div class="weui-cell__ft">
+                        <input id="switchWeightsIgnoreNoRepeat" class="weui-switch" type="checkbox">
+                    </div>
+                </label>
+
+                <div class="weui-cells" id="weightsList"></div>
+
+                <div class="weui-cell">
+                    <div class="weui-cell__bd">
+                        <button id="btnWeightsAddId" class="weui-btn weui-btn_default weui-btn_mini">添加学号</button>
+                        <button id="btnWeightsAddGroup" class="weui-btn weui-btn_default weui-btn_mini" style="margin-left:8px;">添加学号组</button>
+                        <button id="btnWeightsClear" class="weui-btn weui-btn_warn weui-btn_mini" style="margin-left:8px;">清空</button>
+                    </div>
+                    <div class="weui-cell__ft" style="white-space:nowrap;">当前范围内已分配：<span id="weightsTotal">0%</span></div>
+                </div>
+            </div>
+            <div class="sheet__footer">
+                <button id="btnWeightsCancel" class="weui-btn weui-btn_default">取消</button>
+                <button id="btnWeightsSave" class="weui-btn weui-btn_primary">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 智能抽取设置弹窗 -->
+    <div id="advancedSheet" class="weui-mask hidden" role="dialog" aria-modal="true">
+        <div class="sheet">
+            <div class="sheet__header">智能抽取设置<button id="btnAdvancedClose" class="sheet__close" aria-label="关闭">×</button></div>
+            <div class="sheet__content">
+                <div class="weui-cells__title">高级抽取策略</div>
+                <label class="weui-cell weui-cell_switch">
+                    <div class="weui-cell__bd">均衡模式（久未被抽到的更容易被抽中）</div>
+                    <div class="weui-cell__ft">
+                        <input id="switchBalancedMode" class="weui-switch" type="checkbox">
+                    </div>
+                </label>
+                <div class="weui-cell">
+                    <div class="weui-cell__bd" style="color:var(--muted);">启用后，系统会根据上次被点到的时间自动增加权重：越久未被点到，权重越高；首次未被点到者权重最高。可与“概率权重”叠加。</div>
+                </div>
+                <div class="weui-cell">
+                    <div class="weui-cell__bd">
+                        <label for="inputBalancedBoost" class="weui-label">均衡强度（最高加成系数）</label>
+                        <input id="inputBalancedBoost" type="range" min="1" max="3" step="0.1" value="2" style="width:100%">
+                        <div style="margin-top:6px;color:var(--muted);">当前：<span id="balancedBoostPreview">1.00x ~ 2.00x</span></div>
+                    </div>
+                </div>
+                <div class="weui-cells__title">智慧统计</div>
+                <div id="hintDisableNoRepeatTopRow" class="weui-cell js-hint-row">
+                    <div class="weui-cell__bd">
+                        <p id="hintDisableNoRepeatTop" class="js-hint-disable-no-repeat" style="color: #0078D4;font-family: KaiTi, STKaiti, 'Kaiti SC', 'DFKai-SB', serif;">警告！需要关闭“不重复点到”功能时才可以显示，不关的情况下只会统计数据而不会显示！ <a id="actionDisableNoRepeatTop" class="js-action-disable-no-repeat" href="#" style="color:#0078D4;text-decoration: underline; font-family: inherit;">立即去关闭</a></p>
+                    </div>
+                </div>
+                <label class="weui-cell weui-cell_switch">
+                    <div class="weui-cell__bd" data-search="智慧 统计 正确 错误 概率 提升">启用智慧统计（答错多的概率上升）</div>
+                    <div class="weui-cell__ft">
+                        <input id="switchSmartStats" class="weui-switch" type="checkbox">
+                    </div>
+                </label>
+                <label class="weui-cell weui-cell_switch">
+                    <div class="weui-cell__bd" data-search="智慧 统计 概率 下降 正确 优秀">下降优秀同学被提问到的概率（答对多时略降）</div>
+                    <div class="weui-cell__ft">
+                        <input id="switchSmartStatsDecay" class="weui-switch" type="checkbox">
+                    </div>
+                </label>
+                <div class="weui-cell">
+                    <div class="weui-cell__bd">
+                        <label for="inputSmartWrongAlpha" class="weui-label">错题提升强度</label>
+                        <input id="inputSmartWrongAlpha" type="range" min="2" max="5" step="0.1" value="2" style="width:100%">
+                        <div style="margin-top:6px;color:var(--muted);">当前：<span id="smartWrongAlphaPreview">2.00x</span></div>
+                    </div>
+                </div>
+                <div class="weui-cell">
+                    <div class="weui-cell__bd">
+                        <label for="inputSmartCorrectDecay" class="weui-label">正确下降强度</label>
+                        <input id="inputSmartCorrectDecay" type="range" min="0" max="1" step="0.05" value="0.6" style="width:100%">
+                        <div style="margin-top:6px;color:var(--muted);">当前：<span id="smartCorrectDecayPreview">0.60</span></div>
+                    </div>
+                </div>
+                <div class="weui-cell">
+                    <div class="weui-cell__bd" style="color:var(--muted);">重置智慧统计与权重（清空本月统计并重置强度与显式权重）</div>
+                    <div class="weui-cell__ft" style="white-space:nowrap;">
+                        <button id="btnSmartReset" class="weui-btn weui-btn_mini weui-btn_warn">重置</button>
+                    </div>
+                </div>
+                <div class="weui-cell">
+                    <div class="weui-cell__bd" data-search="统计 报表 本月 排行">查看智慧统计报表</div>
+                    <div class="weui-cell__ft" style="white-space: nowrap;">
+                        <button id="btnOpenSmartStats" class="weui-btn weui-btn_mini weui-btn_default" title="打开">打开</button>
+                    </div>
+                </div>
+                <div class="weui-cells__title">使用说明</div>
+                <div class="weui-cells">
+                    <div class="weui-cell">
+                        <div class="weui-cell__bd" style="color:var(--muted);">
+                            <p>均衡模式会自动照顾久未被点到的同学；与“概率权重”叠加生效。</p>
+                            <p>智慧统计：开启后，系统会记录每次抽取结果（被抽、答对、答错）。停止抽取后，底部会出现“✔答对了/❌答错了/→跳过”按钮用于标记结果。</p>
+                            <p>被抽概率与正确率：报表中会按本月数据展示每个学号的“抽到概率(%)、正确率(%)”。</p>
+                            <p>智能提升：答错越多的学号会得到更高的被抽概率提升，帮助关注薄弱同学（与均衡/权重叠加）。</p>
+                            <p id="hintDisableNoRepeat" class="js-hint-disable-no-repeat" style="color: #0078D4;font-family: KaiTi, STKaiti, 'Kaiti SC', 'DFKai-SB', serif;">警告！需要关闭“不重复点到”功能时才可以显示，不关的情况下只会统计数据而不会显示！ <a id="actionDisableNoRepeat" class="js-action-disable-no-repeat" href="#" style="color:#0078D4;text-decoration: underline; font-family: inherit;">立即去关闭</a></p>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+            <div class="sheet__footer">
+                <button id="btnAdvancedCancel" class="weui-btn weui-btn_default">取消</button>
+                <button id="btnAdvancedSave" class="weui-btn weui-btn_primary">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 自定义名单设置弹窗 -->
+    <div id="rosterSheet" class="weui-mask hidden" role="dialog" aria-modal="true">
+        <div class="sheet">
+            <div class="sheet__header">自定义名单<button id="btnRosterClose" class="sheet__close" aria-label="关闭">×</button></div>
+            <div class="sheet__content">
+                <div class="weui-cells__title">格式：学号+空格+姓名，一行一个</div>
+                <div class="weui-cells">
+                    <div class="weui-cell">
+                        <div class="weui-cell__bd">
+                            <textarea id="textareaRoster" class="weui-textarea" placeholder="示例：每行=学号 空格 姓名&#10;1 张三&#10;2 李四&#10;3 王五" rows="10"></textarea>
+                        </div>
+                    </div>
+                    <div class="weui-cell">
+                        <div class="weui-cell__bd">
+                            <div id="rosterStats" style="color:var(--muted);">共 0 行 · 合法 0 · 无效 0 · 重复 0</div>
+                        </div>
+                        <div class="weui-cell__ft" style="white-space: nowrap;">
+                            <button id="btnRosterFormat" class="weui-btn weui-btn_mini weui-btn_default">格式化</button>
+                            <button id="btnRosterSortId" class="weui-btn weui-btn_mini weui-btn_default" style="margin-left:8px;">按学号排序</button>
+                            <button id="btnRosterSortName" class="weui-btn weui-btn_mini weui-btn_default" style="margin-left:8px;">按姓名排序</button>
+                        </div>
+                    </div>
+                    <div class="weui-cell">
+                        <div class="weui-cell__bd">批量处理</div>
+                        <div class="weui-cell__ft" style="white-space: nowrap;">
+                            <button id="btnRosterDedup" class="weui-btn weui-btn_mini weui-btn_default">按学号去重</button>
+                            <button id="btnRosterTrim" class="weui-btn weui-btn_mini weui-btn_default" style="margin-left:8px;">去空行</button>
+                            <button id="btnRosterCopy" class="weui-btn weui-btn_mini weui-btn_default" style="margin-left:8px;">复制</button>
+                            <button id="btnRosterPaste" class="weui-btn weui-btn_mini weui-btn_default" style="margin-left:8px;">粘贴</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="sheet__footer">
+                <button id="btnRosterCancel" class="weui-btn weui-btn_default">取消</button>
+                <button id="btnRosterClear" class="weui-btn weui-btn_warn">清空</button>
+                <button id="btnRosterSave" class="weui-btn weui-btn_primary">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 智慧统计弹窗 -->
+    <div id="smartStatsSheet" class="weui-mask hidden" role="dialog" aria-modal="true">
+        <div class="sheet">
+            <div class="sheet__header" id="smartStatsHeader">智慧统计<button id="btnSmartStatsClose" class="sheet__close" aria-label="关闭">×</button></div>
+            <div class="sheet__content">
+                <div class="weui-cells__title" id="smartStatsMonthTitle">本月统计</div>
+                <div class="weui-cells__title stats-title"><span>被抽最多（前三）</span><span class="stats-hint">实时抽到概率 · 历史正确率</span></div>
+                <div class="weui-cells" id="smartStatsTopPicked"></div>
+                <div class="weui-cells__title stats-title"><span>答对最多（前三）</span><span class="stats-hint">实时抽到概率 · 历史正确率</span></div>
+                <div class="weui-cells" id="smartStatsTopCorrect"></div>
+                <div class="weui-cells__title stats-title"><span>答错最多（前三）</span><span class="stats-hint">实时抽到概率 · 历史正确率</span></div>
+                <div class="weui-cells" id="smartStatsTopWrong"></div>
+            </div>
+            <div class="sheet__footer">
+                <button id="btnSmartStatsOk" class="weui-btn weui-btn_primary">知道了</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主题色设置弹窗 -->
+    <div id="themeSheet" class="weui-mask hidden" role="dialog" aria-modal="true">
+        <div class="sheet">
+            <div class="sheet__header">主题色设置<button id="btnThemeClose" class="sheet__close" aria-label="关闭">×</button></div>
+            <div class="sheet__content">
+                <div class="weui-cells__title">选择一个主题色，或使用调色盘自定义。</div>
+                <div class="weui-cell">
+                    <div class="weui-cell__bd">
+                        <input id="inputThemeColor" type="color" value="#12b76a" style="width:52px;height:32px;border:0;padding:0;background:transparent;">
+                    </div>
+                    <div class="weui-cell__ft" style="white-space:nowrap;">
+                        <button id="btnThemeReset" class="weui-btn weui-btn_mini weui-btn_default">恢复默认</button>
+                        <button id="btnThemeSaveCustom" class="weui-btn weui-btn_mini weui-btn_default" style="margin-left:8px;">保存到预设</button>
+                    </div>
+                </div>
+                <div class="weui-cells__title">预设颜色</div>
+                <div class="weui-cell">
+                    <div class="weui-cell__bd">
+                        <div id="themeSwatches" class="swatches">
+                            <button class="swatch" data-color="#12b76a" style="--c:#12b76a" title="#12b76a"></button>
+                            <button class="swatch" data-color="#0ea5e9" style="--c:#0ea5e9" title="#0ea5e9"></button>
+                            <button class="swatch" data-color="#6366f1" style="--c:#6366f1" title="#6366f1"></button>
+                            <button class="swatch" data-color="#f59e0b" style="--c:#f59e0b" title="#f59e0b"></button>
+                            <button class="swatch" data-color="#ef4444" style="--c:#ef4444" title="#ef4444"></button>
+                            <button class="swatch" data-color="#06b6d4" style="--c:#06b6d4" title="#06b6d4"></button>
+                            <button class="swatch" data-color="#22c55e" style="--c:#22c55e" title="#22c55e"></button>
+                            <button class="swatch" data-color="#a855f7" style="--c:#a855f7" title="#a855f7"></button>
+                            <span id="themeCustomColors" style="display:contents;"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="sheet__footer">
+                <button id="btnThemeCancel" class="weui-btn weui-btn_default">取消</button>
+                <button id="btnThemeSave" class="weui-btn weui-btn_primary">保存</button>
+            </div>
+        </div>
+    </div>
+
+
+</body>
+</html>
+

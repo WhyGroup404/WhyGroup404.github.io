@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Core模式 - 学号点名 (内核 v3.1.0)</title>
+    <link rel="stylesheet" href="terminal.css">
+</head>
+<body>
+    <div class="title-bar" aria-hidden="true">Core模式 — 内核 v3.1.0</div>
+    <div id="statusBar" class="status-bar" role="status" aria-live="polite"></div>
+    <div class="terminal" role="application" aria-label="Core模式 终端">
+        <div id="screen" class="screen" aria-live="polite" aria-atomic="false"></div>
+        <div class="input-row">
+            <span id="prompt" class="prompt">core></span>
+            <input id="cmdline" class="cmdline" type="text" autocomplete="off" spellcheck="false" aria-label="命令输入" autofocus>
+        </div>
+    </div>
+    <input id="fileInput" type="file" class="hidden" accept=".txt,.json">
+    <a id="downloadLink" class="hidden"></a>
+
+    <script defer src="terminal.js"></script>
+</body>
+<noscript>需要启用 JavaScript</noscript>
+</html>
+
+
